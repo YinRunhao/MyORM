@@ -1,5 +1,5 @@
 # MyORM
-A light ORM tool which can using different type database at the same time, supporting MySQL, SQLServer, SQLite
+A light ORM tool which can using different type database at the same time, supporting MySQL, SQLServer, SQLite.
 This is a lightweight ORM tool that written by myself, which can dynamically change the database connection of the program at run time, so that the program can operate different databases at the same time.
 
 It is used in the following steps:
@@ -9,6 +9,7 @@ It is used in the following steps:
   These Attributes are written by myself, they are packaging in MyORM.Attributes
   
   Example:
+  
     [MyTable(Name ="Student")]
     public class Student : ModelBase
     {
