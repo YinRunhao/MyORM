@@ -63,6 +63,7 @@ namespace MyORM
             }
             string sql = stringBuilder.InsertString(GetTableName(t), vals);
             int res = helper.DoUpdate(sql);
+            // modify
             helper.ShutDown();
             return res > 0;
         }
