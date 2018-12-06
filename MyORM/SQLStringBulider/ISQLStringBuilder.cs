@@ -94,5 +94,13 @@ namespace MyORM
 
 
         string SelectPageListWithCondition<T>(string Table, int pageSize, int nowPage, Expression<Func<T, bool>> condition, string[] orderBy = null, string orderType = "asc");
+
+        /// <summary>
+        /// 查询最后一次插入的行记录，表主键为自增且只能有1个主键
+        /// </summary>
+        /// <param name="Table">表名</param>
+        /// <param name="primaryKey">主键名</param>
+        /// <returns></returns>
+        string SelectLastInsertRow(string Table,string primaryKey);
     }
 }

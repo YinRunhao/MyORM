@@ -13,11 +13,10 @@ namespace TestApp
     {
         static void Main(string[] args)
         {
-            string runningPath = System.Environment.CurrentDirectory;
+            string exePath = @"D:\YinRunhao\Git\MyORM\trunk\TestApp";
             string mySQL_conStr = "your mysql database connection string";
-            string sqlServer_conStr = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" +runningPath+ @"\TestDataBases\SQLServerDB.mdf" + ";Integrated Security=True;Connect Timeout=30";
-            string sqlite_conStr = @"Data Source=" + runningPath + @"\TestDataBases\SQLiteDB.db";
-            
+            string sqlServer_conStr = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" + exePath + @"\TestDataBases\SQLServerDB.mdf" + ";Integrated Security=True;Connect Timeout=30";
+            string sqlite_conStr = @"Data Source=" + exePath + @"\TestDataBases\SQLiteDB.db";
 
             // step 1  SetConnectionString
             MySQLService.SetConnection(mySQL_conStr);
@@ -84,7 +83,6 @@ namespace TestApp
             List<Student> dataList = service.LoadAll<Student>();
             PrintObj(dataList);
             Console.WriteLine("-------------LoadAll_End-------------\n");
-            
         }
 
         static void ReadByCondition(SQLService service)

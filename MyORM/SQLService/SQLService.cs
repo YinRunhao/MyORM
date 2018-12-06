@@ -14,10 +14,7 @@ namespace MyORM
 
         protected ISQLStringBuilder stringBuilder;
 
-        protected virtual void OpenConnection()
-        {
-            throw new NotImplementedException("未实现打开数据库连接打方法");
-        }
+        protected abstract void OpenConnection();
 
         /// <summary>
         /// 将对象转换为一条数据库记录并存入
@@ -30,6 +27,9 @@ namespace MyORM
             Type t = model.GetType();
             var props = t.GetProperties();
             List<PropertyInfo> baseProps = new List<PropertyInfo>();
+            PropertyInfo primaryKey = null;
+            int primaryKeyCnt = 0;
+
             foreach (var p in props)
             {
                 if (p.PropertyType.Namespace == "System")
@@ -44,12 +44,16 @@ namespace MyORM
             {
                 string key = p.Name;
                 string value = "";
+                if (p.IsDefined(typeof(MyPrimaryKeyAttribute)))
+                {
+                    primaryKeyCnt++;
+                }
+
                 if (p.GetValue(model) == null)
                     value = "null";
-                //AutoIncreasement的Int类型未设定值的都默认为null
+                //AutoIncrement的Int类型未设定值的都默认为null
                 else if (p.IsDefined(typeof(MyAutoIncrementAttribute)) && Convert.ToInt64(p.GetValue(model)) == 0)
                 {
-                    //value = "null";
                     continue;
                 }
                 else if (p.PropertyType == typeof(DateTime))
@@ -63,7 +67,19 @@ namespace MyORM
             }
             string sql = stringBuilder.InsertString(GetTableName(t), vals);
             int res = helper.DoUpdate(sql);
-            // modify
+
+            // UpdateModel
+            if(1 == primaryKeyCnt && 0 < res)
+            {
+                primaryKey = FindAutoIncrementPrimaryKey(t);
+                if (null != primaryKey)
+                {
+                    sql = stringBuilder.SelectLastInsertRow(GetTableName(t),primaryKey.Name);
+                    var table = helper.DoSelect(sql);
+                    initModel(table.Rows[0],t,model);
+                }
+            }
+
             helper.ShutDown();
             return res > 0;
         }
@@ -501,6 +517,29 @@ namespace MyORM
         {
             var t = model.GetType();
             initModel(dr, t,model);
+        }
+
+        /// <summary>
+        /// 查找传入类型中既是主键又是自增的属性
+        /// </summary>
+        /// <param name="modelType"></param>
+        /// <returns></returns>
+        private PropertyInfo FindAutoIncrementPrimaryKey(Type modelType)
+        {
+            var propList = modelType.GetProperties();
+            PropertyInfo ret = null;
+            foreach (PropertyInfo item in propList)
+            {
+                if (item.IsDefined(typeof(MyAutoIncrementAttribute)))
+                {
+                    if (item.IsDefined(typeof(MyPrimaryKeyAttribute)))
+                    {
+                        ret = item;
+                        break;
+                    }
+                }
+            }
+            return ret;
         }
     }
 }

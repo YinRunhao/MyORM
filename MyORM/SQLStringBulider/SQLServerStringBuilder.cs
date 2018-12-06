@@ -70,5 +70,11 @@ namespace MyORM
             int end = star + pageSize -1;
             return "select * from(select ROW_NUMBER()over(" + OrderByString(orderType, orderBy) + ") rowID,* from " + Table + " " + whereStr + ")  as tbq,(select count(*) cnt from " + Table + ") as tb where tbq.rowID between " + star + " and " + end + ";";
         }
+
+        public override string SelectLastInsertRow(string Table, string primaryKey)
+        {
+            string ret = "select * from " + Table + " where " + Table + "." + primaryKey + "=scope_identity();";
+            return ret;
+        }
     }
 }

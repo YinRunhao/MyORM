@@ -276,5 +276,15 @@ namespace MyORM
             sb.Append("1=1 ");
             return sb.ToString() + OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);
         }
+
+        /// <summary>
+        /// 不同的数据库用的函数不一样，必须由派生类自己实现
+        /// </summary>
+        /// <param name="Table"></param>
+        /// <returns></returns>
+        public virtual string SelectLastInsertRow(string Table,string primaryKey)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
