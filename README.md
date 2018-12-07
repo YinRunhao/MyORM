@@ -1,6 +1,7 @@
 # MyORM
 A light ORM tool which can using different type database at the same time, supporting MySQL, SQLServer, SQLite.
 This is a lightweight ORM tool that written by myself, which can dynamically change the database connection of the program at run time, so that the program can operate different databases at the same time.
+When you change the operating type of database, it is thread safe,for example A thread which using MySQL change to using SQLServer is no effect to B thread which using MySQL
 
 It is used in the following steps:
 
@@ -30,13 +31,13 @@ It is used in the following steps:
      SQLServerService.SetConnection(sqlServer_conStr);
      SQLiteService.SetConnection(sqlite_conStr);
 
-3.Select the type of database you want to use now
+3.Select the default type of database you want to use
 
-    ModelBase.SetService(DataBaseTypesEnum.SQLite);
+    ModelBase.SetDefaultService(DataBaseTypesEnum.SQLite);
     
 4.Instantiate the Service object and use it
 
      SQLService service = new SQLiteService();
      List<Student> stuList = service.LoadAll<Student>();
      
-if you want to change other type database call ModelBase.SetService(DataBaseTypesEnum);
+if you want to change other type database call ModelBase.ChangeService(DataBaseTypesEnum);

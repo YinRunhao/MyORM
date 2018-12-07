@@ -6,22 +6,31 @@ using System.Threading.Tasks;
 using System.Data;
 using MyORM.Attributes;
 using System.Reflection;
-
+using System.Threading;
 
 namespace MyORM
 {
     public class ModelBase 
     {
-        //private static SQLService service;
-        private static DataBaseTypesEnum dataBaseType= DataBaseTypesEnum.Unknow;
+        private static ThreadLocal<DataBaseTypesEnum> dataBaseType = new ThreadLocal<DataBaseTypesEnum>(() => DataBaseTypesEnum.Unknow);
+        private static DataBaseTypesEnum defaultDbType = DataBaseTypesEnum.Unknow;
 
         /// <summary>
-        /// 确定数据库类型
+        /// Set the default Database Type in this application, all threads will auto use this setting unless call ChangeSercice()
         /// </summary>
-        /// <param name="serviceType"></param>
-        public static void SetService(DataBaseTypesEnum dataBaseTypes)
+        /// <param name="DbType"></param>
+        public static void SetDefaultService(DataBaseTypesEnum DbType)
         {
-            dataBaseType = dataBaseTypes;
+            defaultDbType = DbType;
+        }
+
+        /// <summary>
+        /// Change Database type in current thread,other threads have no effect
+        /// </summary>
+        /// <param name="DbType">Database Type</param>
+        public static void ChangeService(DataBaseTypesEnum DbType)
+        {
+            dataBaseType.Value = DbType;
         }
 
         /// <summary>
@@ -32,10 +41,19 @@ namespace MyORM
         private SQLService GetSQLService()
         {
             SQLService service = null;
+            DataBaseTypesEnum DbType = DataBaseTypesEnum.Unknow;
+
             //根据枚举的附加属性获取对应的数据库类型服务并创建对象
-            if (dataBaseType != DataBaseTypesEnum.Unknow)
+            if (dataBaseType.Value != DataBaseTypesEnum.Unknow || defaultDbType != DataBaseTypesEnum.Unknow)
             {
-                var fieldName = Enum.GetName(typeof(DataBaseTypesEnum), dataBaseType);
+                // if not set type in this thread then use the default setting
+                if (dataBaseType.Value == DataBaseTypesEnum.Unknow)
+                {
+                    dataBaseType.Value = defaultDbType;
+                }
+                DbType = dataBaseType.Value;
+
+                var fieldName = Enum.GetName(typeof(DataBaseTypesEnum), DbType);
                 var enumAttr = typeof(DataBaseTypesEnum).GetField(fieldName).GetCustomAttribute(typeof(EnumHelperAttribute)) as EnumHelperAttribute;
                 //var enumAttr = attrb as EnumHelperAttribute;
                 string serviceName = "MyORM." + enumAttr.Describe;
@@ -51,9 +69,19 @@ namespace MyORM
             return service;
         }
 
+        /// <summary>
+        /// Get the Database Type on current thread,if not setting it will use the default setting
+        /// </summary>
+        /// <returns></returns>
         public static DataBaseTypesEnum GetDataBaseType()
         {
-            return dataBaseType;
+            // if not set type in this thread then use the default setting
+            if (dataBaseType.Value == DataBaseTypesEnum.Unknow)
+            {
+                dataBaseType.Value = defaultDbType;
+            }
+
+            return dataBaseType.Value;
         }
 
         /// <summary>
