@@ -50,7 +50,7 @@ namespace MyORM
         {
             if (cmd != null)
                 cmd.Dispose();
-            con.Close();
+            con.Dispose();
         }
 
         public bool IsClose()

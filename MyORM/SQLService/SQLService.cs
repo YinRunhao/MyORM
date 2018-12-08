@@ -502,7 +502,6 @@ namespace MyORM
                             continue;
                         }
                         pro.SetValue(model, value);
-                        ;
                     }
                 }
             }
