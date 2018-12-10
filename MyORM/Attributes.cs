@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MyORM.Attributes
 {
@@ -95,7 +91,7 @@ namespace MyORM.Attributes
     /// Enum Helper
     /// </summary>
     [AttributeUsage(AttributeTargets.Field)]
-    public class EnumHelperAttribute : Attribute
+    internal class EnumHelperAttribute : Attribute
     {
         /// <summary>
         /// 枚举描述

@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MyORM
+namespace MyORM.DbStringBuilder
 {
     internal class SQLiteStringBulider : SQLStringBuilder
     {

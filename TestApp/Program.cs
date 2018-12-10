@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MyORM;
+using MyORM.DbService;
 using System.Linq.Expressions;
 using System.Collections;
 
@@ -30,8 +31,8 @@ namespace TestApp
             {
                 case DataBaseTypesEnum.MySQL:
                     {
-                        //step 2 tell Service that which type of database you want to use now
-                        ModelBase.SetService(DataBaseTypesEnum.MySQL);
+                        //step 2 tell Service that which type of database you want to use in default
+                        ModelBase.SetDefaultService(DataBaseTypesEnum.MySQL);
 
                         //step 3 create a new instance and use it
                         service = new MySQLService();
@@ -39,13 +40,13 @@ namespace TestApp
                     }
                 case DataBaseTypesEnum.SQLServer:
                     {
-                        ModelBase.SetService(DataBaseTypesEnum.SQLServer);
+                        ModelBase.SetDefaultService(DataBaseTypesEnum.SQLServer);
                         service = new SQLServerService();
                         break;
                     }
                 case DataBaseTypesEnum.SQLite:
                     {
-                        ModelBase.SetService(DataBaseTypesEnum.SQLite);
+                        ModelBase.SetDefaultService(DataBaseTypesEnum.SQLite);
                         service = new SQLiteService();
                         break;
                     }

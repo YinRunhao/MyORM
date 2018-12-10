@@ -1,22 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Data;
 using MyORM.Attributes;
 using System.Reflection;
 using System.Threading;
+using MyORM.DbService;
 
 namespace MyORM
 {
-    public class ModelBase 
+    public class ModelBase
     {
         private static ThreadLocal<DataBaseTypesEnum> dataBaseType = new ThreadLocal<DataBaseTypesEnum>(() => DataBaseTypesEnum.Unknow);
         private static DataBaseTypesEnum defaultDbType = DataBaseTypesEnum.Unknow;
 
         /// <summary>
-        /// Set the default Database Type in this application, all threads will auto use this setting unless call ChangeSercice()
+        /// Set the default Database Type in this application, all threads will auto use this setting unless call ChangeService()
         /// </summary>
         /// <param name="DbType"></param>
         public static void SetDefaultService(DataBaseTypesEnum DbType)

@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MyORM
+namespace MyORM.DbStringBuilder
 {
     /// <summary>
     /// 产生对应的SQL语句(MySQL)

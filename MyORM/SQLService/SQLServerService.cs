@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Data.SqlClient;
-using System.Threading.Tasks;
+﻿using MyORM.DbHelper;
+using MyORM.DbStringBuilder;
 
-namespace MyORM
+namespace MyORM.DbService
 {
     public class SQLServerService : SQLService
     {

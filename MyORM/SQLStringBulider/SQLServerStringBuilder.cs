@@ -1,11 +1,12 @@
-﻿using System;
+﻿using MyORM.ExpressionTools;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MyORM
+namespace MyORM.DbStringBuilder
 {
     /// <summary>
     /// 生成对应的SQL语句(SQLserver)

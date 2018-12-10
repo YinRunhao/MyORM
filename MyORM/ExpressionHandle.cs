@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace MyORM
+namespace MyORM.ExpressionTools
 {
     /// <summary>
     /// 处理C#表达式并返回SQL字符串的静态类

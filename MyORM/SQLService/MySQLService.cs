@@ -1,14 +1,7 @@
-﻿using MyORM;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MyORM.DbHelper;
+using MyORM.DbStringBuilder;
 
-namespace MyORM
+namespace MyORM.DbService
 {
     public class MySQLService : SQLService
     {

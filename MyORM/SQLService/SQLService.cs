@@ -4,10 +4,13 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq.Expressions;
 using System.Reflection;
+using MyORM.ExpressionTools;
+using MyORM.DbHelper;
+using MyORM.DbStringBuilder;
 
-namespace MyORM
+
+namespace MyORM.DbService
 {
-
     public abstract class SQLService
     {
         protected ISQLHelper helper;
