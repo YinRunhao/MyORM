@@ -53,7 +53,7 @@ namespace MyORM
                 var fieldName = Enum.GetName(typeof(DataBaseTypesEnum), DbType);
                 var enumAttr = typeof(DataBaseTypesEnum).GetField(fieldName).GetCustomAttribute(typeof(EnumHelperAttribute)) as EnumHelperAttribute;
                 //var enumAttr = attrb as EnumHelperAttribute;
-                string serviceName = "MyORM." + enumAttr.Describe;
+                string serviceName = "MyORM.DbService." + enumAttr.Describe;
                 var serviceType = Type.GetType(serviceName);
                 if (serviceType == null)
                     throw new ArgumentException("未创建或路径错误，导致无法获取到数据库服务类：" + serviceName);
