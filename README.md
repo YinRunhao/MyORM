@@ -41,3 +41,4 @@ It is used in the following steps:
      List<Student> stuList = service.LoadAll<Student>();
      
 if you want to change other type database call ModelBase.ChangeService(DataBaseTypesEnum);
+Not support for type of byte[] yet
