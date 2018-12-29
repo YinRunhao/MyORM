@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 
@@ -35,10 +36,10 @@ namespace MyORM.DbHelper
 
         public int DoUpdate(string sql)
         {
-            if (cmd != null)
+            /*if (cmd != null)
                 cmd.Dispose();
-            cmd = new SQLiteCommand(sql, con);
-            return cmd.ExecuteNonQuery();
+            cmd = new SQLiteCommand(sql, con);*/
+            return DoUpdate(sql,null);
         }
 
         public void ShutDown()
@@ -52,6 +53,24 @@ namespace MyORM.DbHelper
         public bool IsClose()
         {
             return (null == con) || (con.State == ConnectionState.Closed);
+        }
+
+        public int DoUpdate(string sql, KeyValuePair<string, object>[] parameters)
+        {
+            KeyValuePair<string, object> temp;
+            if (cmd != null)
+                cmd.Dispose();
+            cmd = new SQLiteCommand(sql, con);
+            if (parameters != null)
+            {
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    temp = parameters[i];
+                    SQLiteParameter sqlPara = new SQLiteParameter("@"+temp.Key,temp.Value);
+                    cmd.Parameters.Add(sqlPara);
+                }
+            }
+            return cmd.ExecuteNonQuery();
         }
     }
 }

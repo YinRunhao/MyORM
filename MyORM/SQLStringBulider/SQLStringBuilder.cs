@@ -107,14 +107,14 @@ namespace MyORM.DbStringBuilder
         /// <param name="values">对象的各种属性和值</param>
         /// <param name="conditions">主键值</param>
         /// <returns></returns>
-        public virtual string UpdateString(string TableName, KeyValuePair<string, string>[] values, params KeyValuePair<string, string>[] conditions)
+        public virtual string UpdateString(string TableName, KeyValuePair<string, object>[] values, params KeyValuePair<string, object>[] conditions)
         {
             string whereString = BuildWhereString(conditions);
             StringBuilder sb = new StringBuilder();
             sb.Append("update " + TableName + " set ");
             foreach (var val in values)
             {
-                sb.Append(val.Key + "='" + val.Value + "',");
+                sb.Append(val.Key + "=" + "@"+val.Key + ",");
             }
             sb = sb.Remove(sb.Length - 1, 1);
             sb.Append(whereString);
@@ -126,18 +126,13 @@ namespace MyORM.DbStringBuilder
         /// </summary>
         /// <param name="conditions"></param>
         /// <returns></returns>
-        private static string BuildWhereString(params KeyValuePair<string, string>[] conditions)
+        private static string BuildWhereString(params KeyValuePair<string, object>[] conditions)
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(" where ");
             foreach (var kv in conditions)
             {
-                if (kv.Value.ToLower() != "null")
-                    sb.Append(kv.Key + "='" + kv.Value + "' and ");
-                else
-                {
-                    sb.Append(kv.Key + "=" + kv.Value + " and ");
-                }
+                sb.Append(kv.Key + "=@" + kv.Key + " and ");
             }
             sb.Append("1=1");
             return sb.ToString();
@@ -176,7 +171,7 @@ namespace MyORM.DbStringBuilder
             return sb.ToString(); ;
         }
 
-        public virtual string DeleteString(string TableName, params KeyValuePair<string, string>[] conditions)
+        public virtual string DeleteString(string TableName, params KeyValuePair<string, object>[] conditions)
         {
             StringBuilder sb = new StringBuilder();
             sb.Append("delete from " + TableName);

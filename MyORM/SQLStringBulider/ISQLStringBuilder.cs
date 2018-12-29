@@ -39,7 +39,7 @@ namespace MyORM.DbStringBuilder
         /// <param name="values">对象的各种属性和值</param>
         /// <param name="conditions">主键值</param>
         /// <returns></returns>
-        string UpdateString(string TableName, KeyValuePair<string, string>[] values, KeyValuePair<string, string>[] conditions);
+        string UpdateString(string TableName, KeyValuePair<string, object>[] values, KeyValuePair<string, string>[] conditions);
 
         /// <summary>
         /// 构建插入语句

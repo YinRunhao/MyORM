@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using MySql.Data.MySqlClient;
 
@@ -53,6 +54,11 @@ namespace MyORM.DbHelper
         public bool IsClose()
         {
             return (null == con) || (con.State == ConnectionState.Closed);
+        }
+
+        public int DoUpdate(string sql, KeyValuePair<string, object>[] parameters)
+        {
+            throw new NotImplementedException();
         }
     }
 }

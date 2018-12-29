@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System.Collections.Generic;
+using System.Data;
 
 namespace MyORM.DbHelper
 {
@@ -6,6 +7,7 @@ namespace MyORM.DbHelper
     {
         DataTable DoSelect(string sql);
         int DoUpdate(string sql);
+        int DoUpdate(string sql,KeyValuePair<string,object>[] parameters);
         bool IsClose();
 
         /// <summary>

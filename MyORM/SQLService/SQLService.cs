@@ -339,7 +339,6 @@ namespace MyORM.DbService
                     baseprop.Add(p);
                 }
             }
-            //  KeyValuePair<string, string>[] values = new KeyValuePair<string, string>[baseprop.Count];
             int i = 0;
             KeyValuePair<string, string>[] primarykeys = new KeyValuePair<string, string>[primarykey.Count];
             i = 0;
@@ -350,17 +349,16 @@ namespace MyORM.DbService
                 primarykeys[i] = new KeyValuePair<string, string>(key, value);
                 i++;
             }
-            //var oldModel = LoadByID<>(primarykeys);
             string sql = stringBuilder.SelectOneRowByID(GetTableName(t), primarykeys);
             DataTable table = helper.DoSelect(sql);
             var oldObj = Activator.CreateInstance(t);
             var oldModel = oldObj as ModelBase;
             initModel(table.Rows[0], t, oldModel);
-            var values = FindDifference(oldModel, model);
+            var values = FindDifference_1(oldModel, model);
             if (values.Length == 0)     //No Changes
                 return true;
             sql = stringBuilder.UpdateString(GetTableName(t), values, primarykeys);
-            int result = helper.DoUpdate(sql);
+            int result = helper.DoUpdate(sql, values);
             helper.ShutDown();
             return result > 0;
         }
@@ -587,7 +585,7 @@ namespace MyORM.DbService
             return ret;
         }
 
-        private bool ByteArrCompare(Byte[] arr1,Byte[] arr2)
+        /*private bool ByteArrCompare(Byte[] arr1,Byte[] arr2)
         {
             bool ret = true;
             if (null == arr1 || null == arr2)
@@ -609,6 +607,6 @@ namespace MyORM.DbService
                 ret = false;
             }
             return ret;
-        }
+        }*/
     }
 }

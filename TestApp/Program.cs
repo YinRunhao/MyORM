@@ -52,19 +52,19 @@ namespace TestApp
                     }
             }
 
-            LoadById(service);
+           /* LoadById(service);
 
             ReadAll(service);
 
             ReadByCondition(service);
 
-            ReadPageList(service);
+            ReadPageList(service);*/
 
-            Update(service);
+            //Update(service);
 
-            Insert(service);
+            /*Insert(service);
 
-            Delete(service);
+            Delete(service);*/
 
             Console.ReadKey();
         }
