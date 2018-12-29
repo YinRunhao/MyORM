@@ -45,11 +45,12 @@ namespace MyORM.DbHelper
             if (cmd != null)
                 cmd.Dispose();
             con.Dispose();
+            con = null;
         }
 
         public bool IsClose()
         {
-            return con.State == ConnectionState.Closed;
+            return (null == con) || (con.State == ConnectionState.Closed);
         }
     }
 }
