@@ -7,6 +7,10 @@ namespace MyORM.DbHelper
         DataTable DoSelect(string sql);
         int DoUpdate(string sql);
         bool IsClose();
+
+        /// <summary>
+        /// dispose connection and set it null
+        /// </summary>
         void ShutDown();
        // string ConnectionString { get; set; }
     }

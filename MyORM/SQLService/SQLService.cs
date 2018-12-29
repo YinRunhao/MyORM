@@ -480,31 +480,34 @@ namespace MyORM.DbService
             }
             else
             {
-                var props = t.GetProperties();
-                foreach (var pro in props)
+                PropertyInfo property = null;
+                var cols = dr.Table.Columns;
+                string propNm = "";
+                foreach (DataColumn col in cols)
                 {
-                    //基础类型
-                    if (pro.PropertyType.Namespace == "System")
+                    propNm = col.ColumnName;
+                    property = t.GetProperty(propNm);
+                    if (null != property)
                     {
-                        var value = dr[pro.Name];
-                        if (value.GetType().Equals(typeof(Int64)))
+                        if (dr[col] is DBNull)
                         {
-                            value = Convert.ToInt32(value);
+                            property.SetValue(model, null);
+                            continue;
                         }
                         //Sqlite以string类型存储时间，C#不能默认转换
-                        if (pro.PropertyType == typeof(DateTime))
+                        if (col.DataType == typeof(DateTime))
                         {
-                            DateTime dt = Convert.ToDateTime(value);
-                            pro.SetValue(model, dt);
+                            DateTime dt = Convert.ToDateTime(dr[col]);
+                            property.SetValue(model, dt);
                             continue;
                         }
-                        if (value is System.DBNull)
+                        // sqlite中integer用INT64存储
+                        if (col.DataType == typeof(Int64) && property.PropertyType == typeof(Int32))
                         {
-                            if (pro.PropertyType == typeof(string))
-                                pro.SetValue(model, "");
+                            property.SetValue(model, Convert.ToInt32(dr[col]));
                             continue;
                         }
-                        pro.SetValue(model, value);
+                        property.SetValue(model, dr[col]);
                     }
                 }
             }

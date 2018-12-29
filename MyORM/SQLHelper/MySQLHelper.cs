@@ -42,16 +42,17 @@ namespace MyORM.DbHelper
             return cmd.ExecuteNonQuery();
         }
 
-        public  void ShutDown()
+        public void ShutDown()
         {
             if (cmd != null)
                 cmd.Dispose();
             con.Dispose();
+            con = null;
         }
 
         public bool IsClose()
         {
-            return con.State == ConnectionState.Closed;
+            return (null == con) || (con.State == ConnectionState.Closed);
         }
     }
 }
