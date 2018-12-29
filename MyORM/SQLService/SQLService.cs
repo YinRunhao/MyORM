@@ -72,14 +72,14 @@ namespace MyORM.DbService
             int res = helper.DoUpdate(sql);
 
             // UpdateModel
-            if(1 == primaryKeyCnt && 0 < res)
+            if (1 == primaryKeyCnt && 0 < res)
             {
                 primaryKey = FindAutoIncrementPrimaryKey(t);
                 if (null != primaryKey)
                 {
-                    sql = stringBuilder.SelectLastInsertRow(GetTableName(t),primaryKey.Name);
+                    sql = stringBuilder.SelectLastInsertRow(GetTableName(t), primaryKey.Name);
                     var table = helper.DoSelect(sql);
-                    initModel(table.Rows[0],t,model);
+                    initModel(table.Rows[0], t, model);
                 }
             }
 
@@ -125,7 +125,7 @@ namespace MyORM.DbService
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public virtual List<T> LoadAll<T>() where T:ModelBase
+        public virtual List<T> LoadAll<T>() where T : ModelBase
         {
             OpenConnection();
             List<T> result = new List<T>();
@@ -142,7 +142,7 @@ namespace MyORM.DbService
         /// <typeparam name="T"></typeparam>
         /// <param name="conditions"></param>
         /// <returns></returns>
-        public virtual List<T> LoadByCondition<T>(KeyValuePair<string, string>[] conditions,Expression<Func<T,object>> orderBy=null,string orderType = "asc") where T:ModelBase
+        public virtual List<T> LoadByCondition<T>(KeyValuePair<string, string>[] conditions, Expression<Func<T, object>> orderBy = null, string orderType = "asc") where T : ModelBase
         {
             List<T> result = new List<T>();
             Type t = typeof(T);
@@ -163,7 +163,7 @@ namespace MyORM.DbService
                 }
             }
             string[] order = orders.ToArray();
-            string sql = stringBuilder.SelectByCondition(GetTableName(t), conditions,order,orderType);
+            string sql = stringBuilder.SelectByCondition(GetTableName(t), conditions, order, orderType);
             OpenConnection();
             var table = helper.DoSelect(sql);
             initObjectList<T>(result, table);
@@ -177,7 +177,7 @@ namespace MyORM.DbService
         /// <typeparam name="T"></typeparam>
         /// <param name="primaryKeys"></param>
         /// <returns></returns>
-        public virtual T LoadByID<T>(params object[] primaryKeys) where T:ModelBase
+        public virtual T LoadByID<T>(params object[] primaryKeys) where T : ModelBase
         {
             Type t = typeof(T);
             var props = t.GetProperties();
@@ -205,10 +205,10 @@ namespace MyORM.DbService
         /// <typeparam name="T"></typeparam>
         /// <param name="express"></param>
         /// <returns></returns>
-        public virtual List<T> LoadMany<T>(Expression<Func<T, bool>> express) where T:ModelBase
+        public virtual List<T> LoadMany<T>(Expression<Func<T, bool>> express) where T : ModelBase
         {
             OpenConnection();
-            string sql = stringBuilder.SelectMany(express,GetTableName(typeof(T)));
+            string sql = stringBuilder.SelectMany(express, GetTableName(typeof(T)));
             List<T> result = new List<T>();
             var table = helper.DoSelect(sql);
             initObjectList<T>(result, table);
@@ -228,7 +228,7 @@ namespace MyORM.DbService
         /// <param name="orderBy">排序</param>
         /// <param name="orderType">排序类型:asc,desc</param>
         /// <returns></returns>
-        public virtual List<T> LoadPageList<T>(int pageSize, int nowPage, ref int infoCount, Expression<Func<T, bool>> condition = null, Expression<Func<T, object>> orderBy = null, string orderType = "asc")where T:ModelBase
+        public virtual List<T> LoadPageList<T>(int pageSize, int nowPage, ref int infoCount, Expression<Func<T, bool>> condition = null, Expression<Func<T, object>> orderBy = null, string orderType = "asc") where T : ModelBase
         {
             var result = new List<T>();
             OpenConnection();
@@ -355,7 +355,7 @@ namespace MyORM.DbService
             DataTable table = helper.DoSelect(sql);
             var oldObj = Activator.CreateInstance(t);
             var oldModel = oldObj as ModelBase;
-            initModel(table.Rows[0], t,oldModel);
+            initModel(table.Rows[0], t, oldModel);
             var values = FindDifference(oldModel, model);
             if (values.Length == 0)     //No Changes
                 return true;
@@ -374,7 +374,7 @@ namespace MyORM.DbService
                 var props = type.GetProperties();
                 foreach (var pro in props)
                 {
-                    string old = ""; 
+                    string old = "";
                     string newV = "";
                     //DateTime类型的ToString可能会转出带中文星期几所以要严格制定转换格式
                     if (pro.PropertyType == typeof(DateTime))
@@ -394,6 +394,46 @@ namespace MyORM.DbService
                     if (old.CompareTo(newV) != 0)
                     {
                         updateData.Add(new KeyValuePair<string, string>(pro.Name, newV));
+                    }
+                }
+                return updateData.ToArray();
+            }
+            else
+            {
+                throw new ArgumentException("传入的两个对象类型不一样");
+            }
+        }
+
+        private KeyValuePair<string, object>[] FindDifference_1(ModelBase oldObj, ModelBase newObj)
+        {
+            List<KeyValuePair<string, object>> updateData = new List<KeyValuePair<string, object>>();
+            if (oldObj.GetType() == newObj.GetType())
+            {
+                var type = oldObj.GetType();
+                var props = type.GetProperties();
+                foreach (var pro in props)
+                {
+                    object oldVal = pro.GetValue(oldObj); 
+                    object newVal = pro.GetValue(newObj);
+                    if (null == oldVal && null == newVal)
+                    {
+                        continue;
+                    }
+                    if (pro.PropertyType.Namespace != "System")    //外键等对象属性不需要比较
+                    {
+                        continue;
+                    }
+                    // always update
+                    if (pro.PropertyType.IsArray)
+                    {
+                        updateData.Add(new KeyValuePair<string, object>(pro.Name, newVal));
+                    }
+                    else
+                    {
+                        if (!oldVal.Equals(newVal))
+                        {
+                            updateData.Add(new KeyValuePair<string, object>(pro.Name, newVal));
+                        }
                     }
                 }
                 return updateData.ToArray();
@@ -543,6 +583,30 @@ namespace MyORM.DbService
                         break;
                     }
                 }
+            }
+            return ret;
+        }
+
+        private bool ByteArrCompare(Byte[] arr1,Byte[] arr2)
+        {
+            bool ret = true;
+            if (null == arr1 || null == arr2)
+            {
+                ret = false;
+            }
+            else if (arr1.Length == arr2.Length)
+            {
+                for (int i = 0; i < arr2.Length; i++)
+                {
+                    if (arr1[i] != arr2[i])
+                    {
+                        ret = false;
+                    }
+                }
+            }
+            else
+            {
+                ret = false;
             }
             return ret;
         }

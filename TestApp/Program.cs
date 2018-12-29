@@ -14,7 +14,7 @@ namespace TestApp
     {
         static void Main(string[] args)
         {
-            string exePath = @"D:\YinRunhao\Git\MyORM\trunk\TestApp";
+            string exePath = @"D:\YinRunhao\Git\MyORM\branches\SQL-Inject-defence\TestApp";
             string mySQL_conStr = "your mysql database connection string";
             string sqlServer_conStr = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" + exePath + @"\TestDataBases\SQLServerDB.mdf" + ";Integrated Security=True;Connect Timeout=30";
             string sqlite_conStr = @"Data Source=" + exePath + @"\TestDataBases\SQLiteDB.db";
@@ -262,7 +262,14 @@ namespace TestApp
                     if (p.PropertyType.Namespace == "System")
                     {
                         Console.Write(p.Name + ":");
-                        Console.Write(p.GetValue(obj).ToString().TrimEnd() + ",");
+                        if (null == p.GetValue(obj))
+                        {
+                            Console.Write("null");
+                        }
+                        else
+                        {
+                            Console.Write(p.GetValue(obj).ToString().TrimEnd() + ",");
+                        }
                     }
                 }
                 Console.Write("}");
