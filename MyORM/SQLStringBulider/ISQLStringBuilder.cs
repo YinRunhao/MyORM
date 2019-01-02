@@ -22,40 +22,40 @@ namespace MyORM.DbStringBuilder
         /// <param name="TableName">表名</param>
         /// <param name="primaryKeys">主键对应的名字和值</param>
         /// <returns></returns>
-        string SelectOneRowByID(string TableName, params KeyValuePair<string, string>[] primaryKeys);
+        string SelectOneRowByID(string TableName, string[] primaryKeys);
 
         /// <summary>
         /// 对表进行条件查询
         /// </summary>
         /// <param name="TableName">表明</param>
-        /// <param name="conditions">查询条件</param>
+        /// <param name="conditions">查询条件属性名</param>
         /// <returns></returns>
-        string SelectByCondition(string TableName, KeyValuePair<string, string>[] conditions, string[] orderBy=null,string orderType="asc");
+        string SelectByCondition(string TableName, string[] conditions, string[] orderBy=null,string orderType="asc");
 
         /// <summary>
         /// 更新某个表的某条数据 
         /// </summary>
         /// <param name="TableName">要更新的表</param>
-        /// <param name="values">对象的各种属性和值</param>
-        /// <param name="conditions">主键值</param>
+        /// <param name="modifiedProps">对象的各种属性名</param>
+        /// <param name="primaryProps">主键属性名</param>
         /// <returns></returns>
-        string UpdateString(string TableName, KeyValuePair<string, object>[] values, KeyValuePair<string, string>[] conditions);
+        string UpdateString(string TableName, string[] modifiedProps, string[] primaryProps);
 
         /// <summary>
         /// 构建插入语句
         /// </summary>
-        /// <param name="TableName"></param>
-        /// <param name="values"></param>
+        /// <param name="TableName">表名</param>
+        /// <param name="values">对象的各种属性名</param>
         /// <returns></returns>
-        string InsertString(string TableName, KeyValuePair<string, string>[] values);
+        string InsertString(string TableName, string[] values);
 
         /// <summary>
         /// 构建删除语句
         /// </summary>
-        /// <param name="TableName"></param>
-        /// <param name="conditions"></param>
+        /// <param name="TableName">表名</param>
+        /// <param name="conditions">删除过滤条件涉及的属性名</param>
         /// <returns></returns>
-        string DeleteString(string TableName, params KeyValuePair<string, string>[] conditions);
+        string DeleteString(string TableName, string[] conditions);
 
         /// <summary>
         /// 构建分页查询
@@ -72,9 +72,9 @@ namespace MyORM.DbStringBuilder
         /// <param name="Table"></param>
         /// <param name="pageSize"></param>
         /// <param name="nowPage"></param>
-        /// <param name="conditions"></param>
+        /// <param name="conditions">条件属性名</param>
         /// <returns></returns>
-        string SelectPageListWithCondition(string Table, int pageSize, int nowPage, KeyValuePair<string, string>[] conditions, string[] orderBy = null, string orderType = "asc");
+        string SelectPageListWithCondition(string Table, int pageSize, int nowPage, string[] conditions, string[] orderBy = null, string orderType = "asc");
 
         /// <summary>
         /// 按传入的属性名和排序类型进行排序

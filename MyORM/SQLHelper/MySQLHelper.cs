@@ -60,5 +60,10 @@ namespace MyORM.DbHelper
         {
             throw new NotImplementedException();
         }
+
+        public DataTable DoSelect(string sql, KeyValuePair<string, object>[] conditions)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

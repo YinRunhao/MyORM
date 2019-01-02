@@ -41,35 +41,28 @@ namespace MyORM.DbService
                 }
             }
 
-            KeyValuePair<string, string>[] vals = new KeyValuePair<string, string>[baseProps.Count];
+            KeyValuePair<string, object>[] vals = new KeyValuePair<string, object>[baseProps.Count];
+            string[] propNms = new string[baseProps.Count];
             int i = 0;
             foreach (var p in baseProps)
             {
                 string key = p.Name;
-                string value = "";
+                object value = null;
                 if (p.IsDefined(typeof(MyPrimaryKeyAttribute)))
                 {
                     primaryKeyCnt++;
                 }
-
-                if (p.GetValue(model) == null)
-                    value = "null";
-                //AutoIncrement的Int类型未设定值的都默认为null
-                else if (p.IsDefined(typeof(MyAutoIncrementAttribute)) && Convert.ToInt64(p.GetValue(model)) == 0)
+                if (p.IsDefined(typeof(MyAutoIncrementAttribute)) && Convert.ToInt32(p.GetValue(model)) == 0)
                 {
                     continue;
                 }
-                else if (p.PropertyType == typeof(DateTime))
-                {
-                    value = ((DateTime)p.GetValue(model)).ToString("s");
-                }
-                else
-                    value = p.GetValue(model).ToString();
-                vals[i] = new KeyValuePair<string, string>(key, value);
+                value = p.GetValue(model);
+                vals[i] = new KeyValuePair<string, object>(key, value);
+                propNms[i] = key;
                 i++;
             }
-            string sql = stringBuilder.InsertString(GetTableName(t), vals);
-            int res = helper.DoUpdate(sql);
+            string sql = stringBuilder.InsertString(GetTableName(t), propNms);
+            int res = helper.DoUpdate(sql,vals);
 
             // UpdateModel
             if (1 == primaryKeyCnt && 0 < res)
@@ -107,14 +100,16 @@ namespace MyORM.DbService
             }
 
             KeyValuePair<string, string>[] primary = new KeyValuePair<string, string>[primaryKeys.Count];
+            string[] propNms = new string[primaryKeys.Count];
             for (int i = 0; i < primaryKeys.Count; i++)
             {
                 string key = primaryKeys[i].Name;
                 var val = primaryKeys[i].GetValue(model).ToString();
                 primary[i] = new KeyValuePair<string, string>(key, val);
+                propNms[i] = key;
             }
 
-            string sql = stringBuilder.DeleteString(GetTableName(t), primary);
+            string sql = stringBuilder.DeleteString(GetTableName(t), propNms);
             int result = helper.DoUpdate(sql);
             helper.ShutDown();
             return result > 0;
@@ -142,11 +137,12 @@ namespace MyORM.DbService
         /// <typeparam name="T"></typeparam>
         /// <param name="conditions"></param>
         /// <returns></returns>
-        public virtual List<T> LoadByCondition<T>(KeyValuePair<string, string>[] conditions, Expression<Func<T, object>> orderBy = null, string orderType = "asc") where T : ModelBase
+        public virtual List<T> LoadByCondition<T>(KeyValuePair<string, object>[] conditions, Expression<Func<T, object>> orderBy = null, string orderType = "asc") where T : ModelBase
         {
             List<T> result = new List<T>();
             Type t = typeof(T);
             List<string> orders = new List<string>();
+
             if (orderBy != null)  //有传排序属性就按排序属性排序
             {
                 orders.Add(ExpressionHandle.DealGetPropertyNameExpression<T>(orderBy));
@@ -162,10 +158,14 @@ namespace MyORM.DbService
                     }
                 }
             }
+
+            // 获取作为条件的属性的属性名
+            string[] propNms = GetKeysArray(conditions);
+
             string[] order = orders.ToArray();
-            string sql = stringBuilder.SelectByCondition(GetTableName(t), conditions, order, orderType);
+            string sql = stringBuilder.SelectByCondition(GetTableName(t), propNms, order, orderType);
             OpenConnection();
-            var table = helper.DoSelect(sql);
+            var table = helper.DoSelect(sql,conditions);
             initObjectList<T>(result, table);
             helper.ShutDown();
             return result;
@@ -277,7 +277,7 @@ namespace MyORM.DbService
         /// <param name="orderBy">排序</param>
         /// <param name="orderType">排序类型:asc,desc</param>
         /// <returns></returns>
-        public virtual List<T> LoadPageList<T>(int pageSize, int nowPage, ref int infoCount, KeyValuePair<string, string>[] conditions = null, Expression<Func<T, object>> orderBy = null, string orderType = "asc") where T : ModelBase
+        public virtual List<T> LoadPageList<T>(int pageSize, int nowPage, ref int infoCount, KeyValuePair<string, object>[] conditions = null, Expression<Func<T, object>> orderBy = null, string orderType = "asc") where T : ModelBase
         {
             var result = new List<T>();
             OpenConnection();
@@ -301,11 +301,12 @@ namespace MyORM.DbService
             }
             string[] order = orders.ToArray();
             string sql = "";// BuildPageSelectSql();
+            string[] propNms = GetKeysArray(conditions);
             if (conditions == null)
                 sql = stringBuilder.SelectPageList(tragetType.Name, pageSize, nowPage, order, orderType);
             else
-                sql = stringBuilder.SelectPageListWithCondition(tragetType.Name, pageSize, nowPage, conditions, order, orderType);
-            var table = helper.DoSelect(sql);
+                sql = stringBuilder.SelectPageListWithCondition(tragetType.Name, pageSize, nowPage, propNms, order, orderType);
+            var table = helper.DoSelect(sql,conditions);
             initObjectList<T>(result, table);
             if (table.Rows.Count > 0)
             {
@@ -327,6 +328,8 @@ namespace MyORM.DbService
             var props = t.GetProperties();
             List<PropertyInfo> baseprop = new List<PropertyInfo>();
             List<PropertyInfo> primarykey = new List<PropertyInfo>();
+            string[] primaryProps = null;       // 主键属性名数组
+            string[] modifiedProp = null;       // 有改动的属性属性名数组
             foreach (var p in props)
             {
                 if (p.IsDefined(typeof(MyPrimaryKeyAttribute)))
@@ -340,67 +343,70 @@ namespace MyORM.DbService
                 }
             }
             int i = 0;
-            KeyValuePair<string, string>[] primarykeys = new KeyValuePair<string, string>[primarykey.Count];
+            KeyValuePair<string, object>[] primarykeys = new KeyValuePair<string, object>[primarykey.Count];
             i = 0;
             foreach (var p in primarykey)
             {
                 string key = p.Name;
-                string value = p.GetValue(model).ToString();
-                primarykeys[i] = new KeyValuePair<string, string>(key, value);
+                object value = p.GetValue(model).ToString();
+                primarykeys[i] = new KeyValuePair<string, object>(key, value);
                 i++;
             }
-            string sql = stringBuilder.SelectOneRowByID(GetTableName(t), primarykeys);
+            primaryProps = GetKeysArray(primarykeys);
+            string sql = stringBuilder.SelectOneRowByID(GetTableName(t), primaryProps);
             DataTable table = helper.DoSelect(sql);
             var oldObj = Activator.CreateInstance(t);
             var oldModel = oldObj as ModelBase;
             initModel(table.Rows[0], t, oldModel);
             var values = FindDifference_1(oldModel, model);
+            modifiedProp = GetKeysArray(values);
             if (values.Length == 0)     //No Changes
                 return true;
-            sql = stringBuilder.UpdateString(GetTableName(t), values, primarykeys);
+            sql = stringBuilder.UpdateString(GetTableName(t), modifiedProp, primaryProps);
+
             int result = helper.DoUpdate(sql, values);
             helper.ShutDown();
             return result > 0;
         }
 
-        private KeyValuePair<string, string>[] FindDifference(ModelBase oldObj, ModelBase newObj)
-        {
-            List<KeyValuePair<string, string>> updateData = new List<KeyValuePair<string, string>>();
-            if (oldObj.GetType() == newObj.GetType())
-            {
-                var type = oldObj.GetType();
-                var props = type.GetProperties();
-                foreach (var pro in props)
-                {
-                    string old = "";
-                    string newV = "";
-                    //DateTime类型的ToString可能会转出带中文星期几所以要严格制定转换格式
-                    if (pro.PropertyType == typeof(DateTime))
-                    {
-                        old = ((DateTime)pro.GetValue(oldObj)).ToString("yyyy/MM/dd HH:mm:ss");
-                        newV = ((DateTime)pro.GetValue(newObj)).ToString("yyyy/MM/dd HH:mm:ss");
-                    }
-                    else if (pro.PropertyType.Namespace != "System")    //外键等对象属性不需要比较
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        old = pro.GetValue(oldObj).ToString();
-                        newV = pro.GetValue(newObj).ToString();
-                    }
-                    if (old.CompareTo(newV) != 0)
-                    {
-                        updateData.Add(new KeyValuePair<string, string>(pro.Name, newV));
-                    }
-                }
-                return updateData.ToArray();
-            }
-            else
-            {
-                throw new ArgumentException("传入的两个对象类型不一样");
-            }
-        }
+        //private KeyValuePair<string, string>[] FindDifference(ModelBase oldObj, ModelBase newObj)
+        //{
+        //    List<KeyValuePair<string, string>> updateData = new List<KeyValuePair<string, string>>();
+        //    if (oldObj.GetType() == newObj.GetType())
+        //    {
+        //        var type = oldObj.GetType();
+        //        var props = type.GetProperties();
+        //        foreach (var pro in props)
+        //        {
+        //            string old = "";
+        //            string newV = "";
+        //            //DateTime类型的ToString可能会转出带中文星期几所以要严格制定转换格式
+        //            if (pro.PropertyType == typeof(DateTime))
+        //            {
+        //                old = ((DateTime)pro.GetValue(oldObj)).ToString("yyyy/MM/dd HH:mm:ss");
+        //                newV = ((DateTime)pro.GetValue(newObj)).ToString("yyyy/MM/dd HH:mm:ss");
+        //            }
+        //            else if (pro.PropertyType.Namespace != "System")    //外键等对象属性不需要比较
+        //            {
+        //                continue;
+        //            }
+        //            else
+        //            {
+        //                old = pro.GetValue(oldObj).ToString();
+        //                newV = pro.GetValue(newObj).ToString();
+        //            }
+        //            if (old.CompareTo(newV) != 0)
+        //            {
+        //                updateData.Add(new KeyValuePair<string, string>(pro.Name, newV));
+        //            }
+        //        }
+        //        return updateData.ToArray();
+        //    }
+        //    else
+        //    {
+        //        throw new ArgumentException("传入的两个对象类型不一样");
+        //    }
+        //}
 
         private KeyValuePair<string, object>[] FindDifference_1(ModelBase oldObj, ModelBase newObj)
         {
@@ -448,14 +454,16 @@ namespace MyORM.DbService
         /// <typeparam name="T"></typeparam>
         /// <param name="primaryKeys"></param>
         /// <returns></returns>
-        public virtual T LoadByID<T>(params KeyValuePair<string, string>[] primaryKeys) where T:ModelBase
+        public virtual T LoadByID<T>(params KeyValuePair<string, object>[] primaryKeys) where T:ModelBase
         {
             Type t = typeof(T);
-            string sql = stringBuilder.SelectOneRowByID(GetTableName(t), primaryKeys);
+            string[] propNms = GetKeysArray(primaryKeys);
+            string sql = stringBuilder.SelectOneRowByID(GetTableName(t), propNms);
             OpenConnection();
-            var table = helper.DoSelect(sql);
+            var table = helper.DoSelect(sql, primaryKeys);
             if (0 == table.Rows.Count)
             {
+                helper.ShutDown();
                 return null;
             }
             else
@@ -585,6 +593,20 @@ namespace MyORM.DbService
             return ret;
         }
 
+        /// <summary>
+        /// 获取KeyValuePair中Key值组成的数组
+        /// </summary>
+        /// <param name="keyValues"></param>
+        /// <returns></returns>
+        private string[] GetKeysArray(KeyValuePair<string, object>[] keyValues)
+        {
+            string[] ret = new string[keyValues.Length];
+            for (int i = 0; i < keyValues.Length; i++)
+            {
+                ret[i] = keyValues[i].Key;
+            }
+            return ret;
+        }
         /*private bool ByteArrCompare(Byte[] arr1,Byte[] arr2)
         {
             bool ret = true;

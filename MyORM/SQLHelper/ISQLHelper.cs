@@ -5,6 +5,7 @@ namespace MyORM.DbHelper
 {
     public interface ISQLHelper
     {
+        DataTable DoSelect(string sql,KeyValuePair<string,object>[] conditions);
         DataTable DoSelect(string sql);
         int DoUpdate(string sql);
         int DoUpdate(string sql,KeyValuePair<string,object>[] parameters);
