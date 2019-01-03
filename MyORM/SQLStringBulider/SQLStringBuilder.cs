@@ -245,14 +245,14 @@ namespace MyORM.DbStringBuilder
         /// <typeparam name="T"></typeparam>
         /// <param name="express"></param>
         /// <returns></returns>
-        public virtual string SelectMany<T>(Expression<Func<T, bool>> express,string TableName)
+        public virtual List<object> SelectMany<T>(out string sql, Expression<Func<T, bool>> express,string TableName)
         {
-            //string TableName = typeof(T).Name;
-            
-            var ex = express.Body;
-            string sql = SelectMany_Base(TableName);
-            sql += ExpressionHandle.DealExpression(ex);
-            return sql;
+            /* var ex = express.Body;
+             string sql = SelectMany_Base(TableName);
+             sql += ExpressionHandle.DealExpression(ex);
+             return sql;*/
+            sql = "";
+            return null;
         }
 
         public virtual string OrderByString(string orderType, string[] property)
@@ -284,19 +284,21 @@ namespace MyORM.DbStringBuilder
                 throw new ArgumentException("排序类型:"+orderType+"不正确");
         }
 
-        public virtual string SelectPageListWithCondition<T>(string Table, int pageSize, int nowPage, Expression<Func<T, bool>> condition, string[] orderBy = null, string orderType = "asc")
+        public virtual List<object> SelectPageListWithCondition<T>(out string sql, string Table, int pageSize, int nowPage, Expression<Func<T, bool>> condition, string[] orderBy = null, string orderType = "asc")
         {
-            StringBuilder sb = new StringBuilder();
-            string whereStr = "";
-            sb.Append("select * from " + Table + ",(select count(*) as cnt from " + Table + ") as T" + " where ");
-            if(condition != null)
-            {
-                whereStr = ExpressionHandle.DealExpression(condition.Body);
-                sb.Append(whereStr);
-                sb.Append(" and ");
-            }
-            sb.Append("1=1 ");
-            return sb.ToString() + OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);
+            /* StringBuilder sb = new StringBuilder();
+             string whereStr = "";
+             sb.Append("select * from " + Table + ",(select count(*) as cnt from " + Table + ") as T" + " where ");
+             if(condition != null)
+             {
+                 whereStr = ExpressionHandle.DealExpression(condition.Body);
+                 sb.Append(whereStr);
+                 sb.Append(" and ");
+             }
+             sb.Append("1=1 ");
+             return sb.ToString() + OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);*/
+            sql = "";
+            return null;
         }
 
         /// <summary>

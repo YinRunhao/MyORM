@@ -7,6 +7,7 @@ using MyORM;
 using MyORM.DbService;
 using System.Linq.Expressions;
 using System.Collections;
+using System.Data.SQLite;
 
 namespace TestApp
 {
@@ -51,6 +52,25 @@ namespace TestApp
                         break;
                     }
             }
+
+            //demo
+            /*string testsql = "select * from Teacher where Name like @Name";
+            object test = "Mis%";
+            SQLiteConnection con = new SQLiteConnection(sqlite_conStr);
+            con.Open();
+            var cmd = new SQLiteCommand(testsql,con);
+            SQLiteParameter parameter = new SQLiteParameter("@Name","Mis%");
+            cmd.Parameters.Add(parameter);
+            var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                var nm = reader.GetString(1);
+                ;
+            }
+            reader.Close();
+            cmd.Dispose();
+            con.Close();*/
+
 
            /* LoadById(service);
 
@@ -123,8 +143,8 @@ namespace TestApp
 
             Console.WriteLine("-------------LoadByCondition-------------");
             //using Key Value pair
-            KeyValuePair<string, string>[] keyValue = new KeyValuePair<string, string>[2] 
-                { new KeyValuePair<string, string>("StudentId","1"),new KeyValuePair<string, string>("CourseId","2")};
+            KeyValuePair<string, object>[] keyValue = new KeyValuePair<string, object>[2] 
+                { new KeyValuePair<string, object>("StudentId",1),new KeyValuePair<string, object>("CourseId",2)};
             dataList = service.LoadByCondition<Learn>(keyValue);
             PrintObj(dataList);
             Console.WriteLine("-------------LoadByCondition_End-------------\n");
@@ -145,7 +165,7 @@ namespace TestApp
 
             Console.WriteLine("-------------LoadPageList_KeyValuePair-------------");
             //using KeyValuePair
-            KeyValuePair<string, string>[] keyValue = new KeyValuePair<string, string>[1] { new KeyValuePair<string, string>("Grade","100")};
+            KeyValuePair<string, object>[] keyValue = new KeyValuePair<string, object>[1] { new KeyValuePair<string, object>("Grade",100)};
             dataList = service.LoadPageList<Learn>(pageSize, pageIdx, ref count, keyValue);
             PrintObj(dataList);
             Console.WriteLine("-------------LoadPageList_KeyValuePair_End-------------\n");

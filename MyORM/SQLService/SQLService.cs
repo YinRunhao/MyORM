@@ -207,12 +207,12 @@ namespace MyORM.DbService
         /// <returns></returns>
         public virtual List<T> LoadMany<T>(Expression<Func<T, bool>> express) where T : ModelBase
         {
-            OpenConnection();
-            string sql = stringBuilder.SelectMany(express, GetTableName(typeof(T)));
+            //OpenConnection();
+            //string sql = stringBuilder.SelectMany(express, GetTableName(typeof(T)));
             List<T> result = new List<T>();
-            var table = helper.DoSelect(sql);
-            initObjectList<T>(result, table);
-            helper.ShutDown();
+           // var table = helper.DoSelect(sql);
+           // initObjectList<T>(result, table);
+           // helper.ShutDown();
             return result;
         }
 
@@ -231,38 +231,38 @@ namespace MyORM.DbService
         public virtual List<T> LoadPageList<T>(int pageSize, int nowPage, ref int infoCount, Expression<Func<T, bool>> condition = null, Expression<Func<T, object>> orderBy = null, string orderType = "asc") where T : ModelBase
         {
             var result = new List<T>();
-            OpenConnection();
-            var tragetType = typeof(T);
-            List<string> orders = new List<string>();
-            if (orderBy != null)  //有传排序属性就按排序属性排序
-            {
-                orders.Add(ExpressionHandle.DealGetPropertyNameExpression<T>(orderBy));
-            }
-            else    //否则按主键排序
-            {
-                Type t = typeof(T);
-                var props = t.GetProperties();
-                foreach (var p in props)
-                {
-                    if (p.IsDefined(typeof(MyPrimaryKeyAttribute)))
-                    {
-                        orders.Add(p.Name);
-                    }
-                }
-            }
-            string[] order = orders.ToArray();
-            string sql = "";// BuildPageSelectSql();
-            if (condition == null)
-                sql = stringBuilder.SelectPageList(tragetType.Name, pageSize, nowPage, order, orderType);
-            else
-                sql = stringBuilder.SelectPageListWithCondition(tragetType.Name, pageSize, nowPage, condition, order, orderType);
-            var table = helper.DoSelect(sql);
-            initObjectList<T>(result, table);
-            if (table.Rows.Count > 0)
-            {
-                infoCount = Convert.ToInt32(table.Rows[0]["cnt"]);
-            }
-            helper.ShutDown();
+            //OpenConnection();
+            //var tragetType = typeof(T);
+            //List<string> orders = new List<string>();
+            //if (orderBy != null)  //有传排序属性就按排序属性排序
+            //{
+            //    orders.Add(ExpressionHandle.DealGetPropertyNameExpression<T>(orderBy));
+            //}
+            //else    //否则按主键排序
+            //{
+            //    Type t = typeof(T);
+            //    var props = t.GetProperties();
+            //    foreach (var p in props)
+            //    {
+            //        if (p.IsDefined(typeof(MyPrimaryKeyAttribute)))
+            //        {
+            //            orders.Add(p.Name);
+            //        }
+            //    }
+            //}
+            //string[] order = orders.ToArray();
+            //string sql = "";// BuildPageSelectSql();
+            //if (condition == null)
+            //    sql = stringBuilder.SelectPageList(tragetType.Name, pageSize, nowPage, order, orderType);
+            //else
+            //    sql = stringBuilder.SelectPageListWithCondition(tragetType.Name, pageSize, nowPage, condition, order, orderType);
+            //var table = helper.DoSelect(sql);
+            //initObjectList<T>(result, table);
+            //if (table.Rows.Count > 0)
+            //{
+            //    infoCount = Convert.ToInt32(table.Rows[0]["cnt"]);
+            //}
+            //helper.ShutDown();
             return result;
         }
 
