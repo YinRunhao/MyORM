@@ -207,12 +207,13 @@ namespace MyORM.DbService
         /// <returns></returns>
         public virtual List<T> LoadMany<T>(Expression<Func<T, bool>> express) where T : ModelBase
         {
-            //OpenConnection();
-            //string sql = stringBuilder.SelectMany(express, GetTableName(typeof(T)));
+            OpenConnection();
+            string sql = "";
+            var objs = stringBuilder.SelectMany(out sql,express, GetTableName(typeof(T)));
             List<T> result = new List<T>();
-           // var table = helper.DoSelect(sql);
-           // initObjectList<T>(result, table);
-           // helper.ShutDown();
+            var table = helper.DoSelect(sql);
+            initObjectList<T>(result, table);
+            helper.ShutDown();
             return result;
         }
 

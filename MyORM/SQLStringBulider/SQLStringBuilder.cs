@@ -247,11 +247,9 @@ namespace MyORM.DbStringBuilder
         /// <returns></returns>
         public virtual List<object> SelectMany<T>(out string sql, Expression<Func<T, bool>> express,string TableName)
         {
-            /* var ex = express.Body;
-             string sql = SelectMany_Base(TableName);
+             var ex = express.Body;
+             sql = SelectMany_Base(TableName);
              sql += ExpressionHandle.DealExpression(ex);
-             return sql;*/
-            sql = "";
             return null;
         }
 

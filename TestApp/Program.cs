@@ -15,7 +15,7 @@ namespace TestApp
     {
         static void Main(string[] args)
         {
-            string exePath = @"D:\YinRunhao\Git\MyORM\branches\SQL-Inject-defence\TestApp";
+            string exePath = @"F:\C_shap\Git\MyORM\branches\SQL-Inject-defence\TestApp";
             string mySQL_conStr = "your mysql database connection string";
             string sqlServer_conStr = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" + exePath + @"\TestDataBases\SQLServerDB.mdf" + ";Integrated Security=True;Connect Timeout=30";
             string sqlite_conStr = @"Data Source=" + exePath + @"\TestDataBases\SQLiteDB.db";
@@ -52,7 +52,10 @@ namespace TestApp
                         break;
                     }
             }
-
+            int studentId = 2;
+            DateTime now = DateTime.Now;
+            List<Student> dataList = service.LoadMany<Student>(s=>s.Name.StartsWith("Mike") && s.Sid == 2 || s.Birthday == now);
+            //test.StartsWith("",,);
             //demo
             /*string testsql = "select * from Teacher where Name like @Name";
             object test = "Mis%";
@@ -72,13 +75,13 @@ namespace TestApp
             con.Close();*/
 
 
-           /* LoadById(service);
+            /* LoadById(service);
 
-            ReadAll(service);
+             ReadAll(service);
 
-            ReadByCondition(service);
+             ReadByCondition(service);
 
-            ReadPageList(service);*/
+             ReadPageList(service);*/
 
             //Update(service);
 
