@@ -44,14 +44,15 @@ namespace MyORM.DbStringBuilder
             return "select * from(select ROW_NUMBER()over(" + OrderByString(orderType, orderBy)+") rowID,* from " + Table + " "+whereStr+")  as tbq,(select count(*) cnt from " + Table + ") as tb where tbq.rowID between " + star + " and " + end + ";";
         }
 
-        public override List<object> SelectPageListWithCondition<T>(out string sql ,string Table, int pageSize, int nowPage, Expression<Func<T, bool>> condition, string[] orderBy = null, string orderType = "asc")
+        public override KeyValuePair<string,object>[] SelectPageListWithCondition<T>(out string sql ,string Table, int pageSize, int nowPage, Expression<Func<T, bool>> condition, string[] orderBy = null, string orderType = "asc")
         {
-            /* string whereStr = "";
+            KeyValuePair<string, object>[] ret = null;
+             string whereStr = "";
              StringBuilder sb = new StringBuilder();
              sb.Append(" where ");
              if (condition != null)
              {
-                 whereStr = ExpressionHandle.DealExpression(condition.Body);
+                ret = ExpressionHandle.DealExpression(out whereStr, condition.Body);
                  sb.Append(whereStr);
                  sb.Append(" and ");
              }
@@ -59,14 +60,13 @@ namespace MyORM.DbStringBuilder
              whereStr = sb.ToString();
              int star = (nowPage - 1) * pageSize + 1;
              int end = star + pageSize -1;
-             return "select * from(select ROW_NUMBER()over(" + OrderByString(orderType, orderBy) + ") rowID,* from " + Table + " " + whereStr + ")  as tbq,(select count(*) cnt from " + Table + ") as tb where tbq.rowID between " + star + " and " + end + ";";*/
-            sql = "";
-            return null;
+            sql= "select * from(select ROW_NUMBER()over(" + OrderByString(orderType, orderBy) + ") rowID,* from " + Table + " " + whereStr + ")  as tbq,(select count(*) cnt from " + Table + ") as tb where tbq.rowID between " + star + " and " + end + ";";
+            return ret;
         }
 
         public override string SelectLastInsertRow(string Table, string primaryKey)
         {
-            string ret = "select * from " + Table + " where " + Table + "." + primaryKey + "=scope_identity();";
+            string ret = "select * from " + Table + " where " + Table + "." + primaryKey + "=@@IDENTITY;";
             return ret;
         }
     }

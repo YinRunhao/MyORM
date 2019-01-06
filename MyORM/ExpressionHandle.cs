@@ -89,8 +89,8 @@ namespace MyORM.ExpressionTools
         /// </summary>
         /// <param name="sql">生成的SQL语句</param>
         /// <param name="exp">方法表达式</param>
-        /// <returns>表达式中的值(SQL语句中的查询条件值)</returns>
-        private static string DealMethodCallExpression(out string sql, MethodCallExpression exp)
+        /// <returns>表达式中查询条件(SQL语句中的查询条件) Key:参数名,Value:参数值</returns>
+        private static KeyValuePair<string,string> DealMethodCallExpression(out string sql, MethodCallExpression exp)
         {
             var obj = exp.Object as System.Linq.Expressions.MemberExpression;
             if (obj == null)
@@ -125,12 +125,10 @@ namespace MyORM.ExpressionTools
                         throw new ArgumentException("方法中的表达式暂不能识别");
                     }
                     string value = valObj.ToString();
-                    //value = value.Trim('\"');
-                    //value = value.Trim();
-                    //value = value.Replace("'","");
                     value = string.Format("{0}{1}{2}","%",value,"%");
                     sql = " " + propname + " like @"+propname;
-                    return value;
+                    
+                    return new KeyValuePair<string, string>(propname,value);
                 }
                 else if (methodName == "StartsWith")
                 {
@@ -150,12 +148,9 @@ namespace MyORM.ExpressionTools
                     }
 
                     string value = valObj.ToString();
-                    //value = value.Trim('\"');
-                    //value = value.Trim();
-                    //value = value.Replace("'", "");
                     value = string.Format("{0}{1}", value, "%");
                     sql = " " + propname + " like @" + propname;
-                    return value;
+                    return new KeyValuePair<string, string>(propname, value);
                 }
                 else if (methodName == "EndsWith")
                 {
@@ -175,12 +170,9 @@ namespace MyORM.ExpressionTools
                     }
 
                     string value = valObj.ToString();
-                    //value = value.Trim('\"');
-                    //value = value.Trim();
-                    //value = value.Replace("'", "");
                     value = string.Format("{0}{1}", "%", value);
                     sql = " " + propname + " like @" + propname;
-                    return value;
+                    return new KeyValuePair<string, string>(propname, value);
                 }
                 else if (methodName == "Equals")
                 {
@@ -200,11 +192,8 @@ namespace MyORM.ExpressionTools
                     }
 
                     string value = valObj.ToString();
-                    //value = value.Trim('\"');
-                    //value = value.Trim();
-                    //value = value.Replace("'", "");
                     sql = " " + propname + " = @" + propname;
-                    return value;
+                    return new KeyValuePair<string, string>(propname, value);
                 }
                 else
                 {
@@ -256,6 +245,12 @@ namespace MyORM.ExpressionTools
             }
         }
 
+        /// <summary>
+        /// 获取类似s=>s.id的表达式中指向的属性名
+        /// </summary>
+        /// <typeparam name="T">类型</typeparam>
+        /// <param name="ex">表达式</param>
+        /// <returns>指向的属性名</returns>
         public static string DealGetPropertyNameExpression<T>(Expression<Func<T, object>> ex)
         {
             if (ex.NodeType == ExpressionType.Lambda)
@@ -282,11 +277,12 @@ namespace MyORM.ExpressionTools
         }
 
         /// <summary>
-        /// 处理C#Lambda表达式
+        /// 处理Lambda表达式生成sql语句，返回语句中的查询参数和参数值
         /// </summary>
-        /// <param name="ex"></param>
-        /// <returns></returns>
-        public static List<object> DealExpression(out string sql,Expression ex)
+        /// <param name="sql">传出的SQL语句</param>
+        /// <param name="ex">Lambda表达式</param>
+        /// <returns>查询参数和参数值,Key:参数名,Value:参数值，错误返回null</returns>
+        public static KeyValuePair<string, object>[] DealExpression(out string sql,Expression ex)
         {
             List<object> paramList = new List<object>();
             List<string> paramNms = new List<string>();
@@ -295,11 +291,23 @@ namespace MyORM.ExpressionTools
             {
                 sql = sql.ReplaceFirst("#","@"+item);
             }
-            return paramList;
+            if (paramList.Count != paramNms.Count)
+            {
+                return null;
+            }
+            else
+            {
+                KeyValuePair<string, object>[] ret= new KeyValuePair<string, object>[paramNms.Count];
+                for (int i = 0; i < paramNms.Count; i++)
+                {
+                    ret[i] = new KeyValuePair<string, object>(paramNms[i],paramList[i]);
+                }
+                return ret;
+            }
         }
 
         /// <summary>
-        /// 
+        /// 处理Lambda表达式生成sql语句
         /// </summary>
         /// <param name="ex">Lambda表达式</param>
         /// <param name="paramList">参数值集合</param>
@@ -333,8 +341,9 @@ namespace MyORM.ExpressionTools
             else if (ex is MethodCallExpression)
             {
                 string sql = "";
-                string val = DealMethodCallExpression(out sql,ex as MethodCallExpression);
-                paramList.Add(val);
+                var temp = DealMethodCallExpression(out sql,ex as MethodCallExpression);
+                paramNms.Add(temp.Key);
+                paramList.Add(temp.Value);
                 return sql;
             }
             else if (ex is BinaryExpression)

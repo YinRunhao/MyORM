@@ -16,7 +16,7 @@ namespace TestApp
         static void Main(string[] args)
         {
             string exePath = @"F:\C_shap\Git\MyORM\branches\SQL-Inject-defence\TestApp";
-            string mySQL_conStr = "your mysql database connection string";
+            string mySQL_conStr = "Your MySQL connection string";
             string sqlServer_conStr = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" + exePath + @"\TestDataBases\SQLServerDB.mdf" + ";Integrated Security=True;Connect Timeout=30";
             string sqlite_conStr = @"Data Source=" + exePath + @"\TestDataBases\SQLiteDB.db";
 
@@ -52,42 +52,20 @@ namespace TestApp
                         break;
                     }
             }
-            int studentId = 2;
-            DateTime now = DateTime.Now;
-            List<Student> dataList = service.LoadMany<Student>(s=>s.Name.StartsWith("Mike") && s.Sid == 2 || s.Birthday == now);
-            //test.StartsWith("",,);
-            //demo
-            /*string testsql = "select * from Teacher where Name like @Name";
-            object test = "Mis%";
-            SQLiteConnection con = new SQLiteConnection(sqlite_conStr);
-            con.Open();
-            var cmd = new SQLiteCommand(testsql,con);
-            SQLiteParameter parameter = new SQLiteParameter("@Name","Mis%");
-            cmd.Parameters.Add(parameter);
-            var reader = cmd.ExecuteReader();
-            while (reader.Read())
-            {
-                var nm = reader.GetString(1);
-                ;
-            }
-            reader.Close();
-            cmd.Dispose();
-            con.Close();*/
 
+            LoadById(service);
 
-            /* LoadById(service);
+            ReadAll(service);
 
-             ReadAll(service);
+            ReadByCondition(service);
 
-             ReadByCondition(service);
+            ReadPageList(service);
 
-             ReadPageList(service);*/
+            Update(service);
 
-            //Update(service);
+            Insert(service);
 
-            /*Insert(service);
-
-            Delete(service);*/
+            Delete(service);
 
             Console.ReadKey();
         }
@@ -116,7 +94,7 @@ namespace TestApp
 
             Console.WriteLine("-------------LoadMany_Lambda-------------");
             //using Lambda
-            List <Learn> dataList = service.LoadMany<Learn>(s=>s.Grade > 60 && s.StudentId == studentId);
+            List<Learn> dataList = service.LoadMany<Learn>(s => s.Grade > 60 && s.StudentId == studentId);
             PrintObj(dataList);
             Console.WriteLine("-------------LoadMany_Lambda_End-------------\n");
 
@@ -128,7 +106,7 @@ namespace TestApp
 
             Console.WriteLine("-------------LoadMany_StartsWith-------------");
             //using Lambda include function StarWitch
-            teachers = service.LoadMany<Teacher>(s=>s.Name.StartsWith("Mr"));
+            teachers = service.LoadMany<Teacher>(s => s.Name.StartsWith("Mr"));
             PrintObj(teachers);
             Console.WriteLine("-------------LoadMany_StartsWith_End-------------\n");
 
@@ -146,7 +124,7 @@ namespace TestApp
 
             Console.WriteLine("-------------LoadByCondition-------------");
             //using Key Value pair
-            KeyValuePair<string, object>[] keyValue = new KeyValuePair<string, object>[2] 
+            KeyValuePair<string, object>[] keyValue = new KeyValuePair<string, object>[2]
                 { new KeyValuePair<string, object>("StudentId",1),new KeyValuePair<string, object>("CourseId",2)};
             dataList = service.LoadByCondition<Learn>(keyValue);
             PrintObj(dataList);
@@ -168,7 +146,7 @@ namespace TestApp
 
             Console.WriteLine("-------------LoadPageList_KeyValuePair-------------");
             //using KeyValuePair
-            KeyValuePair<string, object>[] keyValue = new KeyValuePair<string, object>[1] { new KeyValuePair<string, object>("Grade",100)};
+            KeyValuePair<string, object>[] keyValue = new KeyValuePair<string, object>[1] { new KeyValuePair<string, object>("Grade", 100) };
             dataList = service.LoadPageList<Learn>(pageSize, pageIdx, ref count, keyValue);
             PrintObj(dataList);
             Console.WriteLine("-------------LoadPageList_KeyValuePair_End-------------\n");
@@ -264,7 +242,7 @@ namespace TestApp
 
         private static void PrintObj(object obj)
         {
-            
+
             Type type = obj.GetType();
             var collectionType = type.GetInterface("ICollection");
             if (collectionType != null)

@@ -20,8 +20,6 @@ namespace TestApp
 
         public DateTime Birthday { get; set; }
 
-        public Byte[] TestCol { get; set; }
-
         [MyMappingList(TableName = "Learn", ForeignKeys = new string[1] { "StudentId" })]
         public ICollection<Learn> learns { get { return this.MappingListInit<Learn>(); } }
     }

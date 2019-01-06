@@ -30,9 +30,6 @@ namespace MyORM.DbHelper
 
         public int DoUpdate(string sql)
         {
-            /*if (cmd != null)
-                cmd.Dispose();
-            cmd = new SQLiteCommand(sql, con);*/
             return DoUpdate(sql,null);
         }
 
@@ -60,6 +57,10 @@ namespace MyORM.DbHelper
                 for (int i = 0; i < parameters.Length; i++)
                 {
                     temp = parameters[i];
+                    if (string.IsNullOrEmpty(temp.Key))
+                    {
+                        continue;
+                    }
                     SQLiteParameter sqlPara = new SQLiteParameter("@"+temp.Key,temp.Value);
                     cmd.Parameters.Add(sqlPara);
                 }

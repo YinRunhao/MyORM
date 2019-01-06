@@ -12,7 +12,7 @@ namespace MyORM.DbStringBuilder
     /// <summary>
     /// 生成对应的SQL语句（基于MYSQL，若扩展其他数据库需要重写某些方法）
     /// </summary>
-    abstract class SQLStringBuilder:ISQLStringBuilder
+    abstract class SQLStringBuilder : ISQLStringBuilder
     {
         /// <summary>
         /// 查询该表下所有数据
@@ -99,7 +99,7 @@ namespace MyORM.DbStringBuilder
                 }
                 sb.Append(props);
             }
-            sb.Append(" "+orderType);
+            sb.Append(" " + orderType);
             return sb.ToString();
         }
 
@@ -174,6 +174,10 @@ namespace MyORM.DbStringBuilder
             sb.Append("insert into " + TableName + "(");
             foreach (var val in values)
             {
+                if (string.IsNullOrEmpty(val))
+                {
+                    continue;
+                }
                 if (first)
                 {
                     sb.Append(val);
@@ -184,12 +188,16 @@ namespace MyORM.DbStringBuilder
                     sb.Append(",");
                     sb.Append(val);
                 }
-                
+
             }
             first = true;
             sb.Append(") values(");
             foreach (var val in values)
             {
+                if (string.IsNullOrEmpty(val))
+                {
+                    continue;
+                }
                 if (first)
                 {
                     sb.Append("@" + val);
@@ -200,7 +208,7 @@ namespace MyORM.DbStringBuilder
                     sb.Append(",");
                     sb.Append("@" + val);
                 }
-                
+
             }
             sb.Append(")");
             return sb.ToString(); ;
@@ -215,9 +223,9 @@ namespace MyORM.DbStringBuilder
             return sb.ToString(); ;
         }
 
-        public virtual string SelectPageList(string Table, int pageSize, int nowPage, string[] orderBy = null,string orderType = "asc")
+        public virtual string SelectPageList(string Table, int pageSize, int nowPage, string[] orderBy = null, string orderType = "asc")
         {
-            return "select * from " + Table + ",(select count(*) as cnt from " + Table + ") as T " +OrderByString(orderType,orderBy)+ LimitString(pageSize, nowPage);
+            return "select * from " + Table + ",(select count(*) as cnt from " + Table + ") as T " + OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);
         }
 
         public virtual string SelectPageListWithCondition(string Table, int pageSize, int nowPage, string[] conditions, string[] orderBy = null, string orderType = "asc")
@@ -225,7 +233,8 @@ namespace MyORM.DbStringBuilder
             StringBuilder sb = new StringBuilder();
             sb.Append("select * from " + Table + ",(select count(*) as cnt from " + Table + ") as T");
             sb.Append(BuildWhereString(conditions));
-            return sb.ToString()+OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);
+            sb.Append(" ");
+            return sb.ToString() + OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);
         }
 
         private static string LimitString(int pageSize, int nowPage)
@@ -245,12 +254,15 @@ namespace MyORM.DbStringBuilder
         /// <typeparam name="T"></typeparam>
         /// <param name="express"></param>
         /// <returns></returns>
-        public virtual List<object> SelectMany<T>(out string sql, Expression<Func<T, bool>> express,string TableName)
+        public virtual KeyValuePair<string, object>[] SelectMany<T>(out string sql, Expression<Func<T, bool>> express, string TableName)
         {
-             var ex = express.Body;
-             sql = SelectMany_Base(TableName);
-             sql += ExpressionHandle.DealExpression(ex);
-            return null;
+            var ex = express.Body;
+            string sqlBase = SelectMany_Base(TableName);
+            string whereStr = "";
+            
+            var ret = ExpressionHandle.DealExpression(out whereStr, ex);
+            sql = sqlBase + whereStr;
+            return ret;
         }
 
         public virtual string OrderByString(string orderType, string[] property)
@@ -259,7 +271,7 @@ namespace MyORM.DbStringBuilder
             if (orderType.ToLower().CompareTo("asc") == 0 || orderType.ToLower().CompareTo("desc") == 0)
             {
                 bool flag = true;
-                if (property==null || property.Length == 0)
+                if (property == null || property.Length == 0)
                 {
                     return "";
                 }
@@ -272,31 +284,31 @@ namespace MyORM.DbStringBuilder
                     }
                     else
                     {
-                        sql += ","+val;
+                        sql += "," + val;
                     }
                 }
-                sql = sql + " "+orderType.ToLower();
+                sql = sql + " " + orderType.ToLower();
                 return sql;
             }
             else
-                throw new ArgumentException("排序类型:"+orderType+"不正确");
+                throw new ArgumentException("排序类型:" + orderType + "不正确");
         }
 
-        public virtual List<object> SelectPageListWithCondition<T>(out string sql, string Table, int pageSize, int nowPage, Expression<Func<T, bool>> condition, string[] orderBy = null, string orderType = "asc")
+        public virtual KeyValuePair<string, object>[] SelectPageListWithCondition<T>(out string sql, string Table, int pageSize, int nowPage, Expression<Func<T, bool>> condition, string[] orderBy = null, string orderType = "asc")
         {
-            /* StringBuilder sb = new StringBuilder();
-             string whereStr = "";
-             sb.Append("select * from " + Table + ",(select count(*) as cnt from " + Table + ") as T" + " where ");
-             if(condition != null)
-             {
-                 whereStr = ExpressionHandle.DealExpression(condition.Body);
-                 sb.Append(whereStr);
-                 sb.Append(" and ");
-             }
-             sb.Append("1=1 ");
-             return sb.ToString() + OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);*/
-            sql = "";
-            return null;
+            StringBuilder sb = new StringBuilder();
+            string whereStr = "";
+            KeyValuePair<string, object>[] conditions = null;
+            sb.Append("select * from " + Table + ",(select count(*) as cnt from " + Table + ") as T" + " where ");
+            if (condition != null)
+            {
+                conditions = ExpressionHandle.DealExpression(out whereStr, condition.Body);
+                sb.Append(whereStr);
+                sb.Append(" and ");
+            }
+            sb.Append("1=1 ");
+            sql = sb.ToString() + OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);
+            return conditions;
         }
 
         /// <summary>
@@ -304,7 +316,7 @@ namespace MyORM.DbStringBuilder
         /// </summary>
         /// <param name="Table"></param>
         /// <returns></returns>
-        public virtual string SelectLastInsertRow(string Table,string primaryKey)
+        public virtual string SelectLastInsertRow(string Table, string primaryKey)
         {
             throw new NotImplementedException();
         }

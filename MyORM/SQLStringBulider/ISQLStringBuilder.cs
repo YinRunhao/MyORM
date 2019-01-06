@@ -90,10 +90,10 @@ namespace MyORM.DbStringBuilder
         /// <typeparam name="T"></typeparam>
         /// <param name="express"></param>
         /// <returns></returns>
-        List<object> SelectMany<T>(out string sql, Expression<Func<T, bool>> express, string TableName);
+        KeyValuePair<string,object>[] SelectMany<T>(out string sql, Expression<Func<T, bool>> express, string TableName);
 
 
-        List<object> SelectPageListWithCondition<T>(out string sql, string Table, int pageSize, int nowPage, Expression<Func<T, bool>> condition, string[] orderBy = null, string orderType = "asc");
+        KeyValuePair<string, object>[]  SelectPageListWithCondition<T>(out string sql, string Table, int pageSize, int nowPage, Expression<Func<T, bool>> condition, string[] orderBy = null, string orderType = "asc");
 
         /// <summary>
         /// 查询最后一次插入的行记录，表主键为自增且只能有1个主键
