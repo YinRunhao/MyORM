@@ -15,7 +15,7 @@ namespace TestApp
     {
         static void Main(string[] args)
         {
-            string exePath = @"F:\C_shap\Git\MyORM\branches\SQL-Inject-defence\TestApp";
+            string exePath = @"F:\C_shap\Git\MyORM\trunk\TestApp";
             string mySQL_conStr = "Your MySQL connection string";
             string sqlServer_conStr = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" + exePath + @"\TestDataBases\SQLServerDB.mdf" + ";Integrated Security=True;Connect Timeout=30";
             string sqlite_conStr = @"Data Source=" + exePath + @"\TestDataBases\SQLiteDB.db";
