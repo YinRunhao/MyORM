@@ -7,6 +7,7 @@ using MyORM;
 using MyORM.DbService;
 using System.Linq.Expressions;
 using System.Collections;
+using System.Data.SQLite;
 
 namespace TestApp
 {
@@ -14,8 +15,8 @@ namespace TestApp
     {
         static void Main(string[] args)
         {
-            string exePath = @"D:\YinRunhao\Git\MyORM\trunk\TestApp";
-            string mySQL_conStr = "your mysql database connection string";
+            string exePath = @"F:\C_shap\Git\MyORM\branches\SQL-Inject-defence\TestApp";
+            string mySQL_conStr = "Your MySQL connection string";
             string sqlServer_conStr = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" + exePath + @"\TestDataBases\SQLServerDB.mdf" + ";Integrated Security=True;Connect Timeout=30";
             string sqlite_conStr = @"Data Source=" + exePath + @"\TestDataBases\SQLiteDB.db";
 
@@ -93,7 +94,7 @@ namespace TestApp
 
             Console.WriteLine("-------------LoadMany_Lambda-------------");
             //using Lambda
-            List <Learn> dataList = service.LoadMany<Learn>(s=>s.Grade > 60 && s.StudentId == studentId);
+            List<Learn> dataList = service.LoadMany<Learn>(s => s.Grade > 60 && s.StudentId == studentId);
             PrintObj(dataList);
             Console.WriteLine("-------------LoadMany_Lambda_End-------------\n");
 
@@ -105,7 +106,7 @@ namespace TestApp
 
             Console.WriteLine("-------------LoadMany_StartsWith-------------");
             //using Lambda include function StarWitch
-            teachers = service.LoadMany<Teacher>(s=>s.Name.StartsWith("Mr"));
+            teachers = service.LoadMany<Teacher>(s => s.Name.StartsWith("Mr"));
             PrintObj(teachers);
             Console.WriteLine("-------------LoadMany_StartsWith_End-------------\n");
 
@@ -123,8 +124,8 @@ namespace TestApp
 
             Console.WriteLine("-------------LoadByCondition-------------");
             //using Key Value pair
-            KeyValuePair<string, string>[] keyValue = new KeyValuePair<string, string>[2] 
-                { new KeyValuePair<string, string>("StudentId","1"),new KeyValuePair<string, string>("CourseId","2")};
+            KeyValuePair<string, object>[] keyValue = new KeyValuePair<string, object>[2]
+                { new KeyValuePair<string, object>("StudentId",1),new KeyValuePair<string, object>("CourseId",2)};
             dataList = service.LoadByCondition<Learn>(keyValue);
             PrintObj(dataList);
             Console.WriteLine("-------------LoadByCondition_End-------------\n");
@@ -145,7 +146,7 @@ namespace TestApp
 
             Console.WriteLine("-------------LoadPageList_KeyValuePair-------------");
             //using KeyValuePair
-            KeyValuePair<string, string>[] keyValue = new KeyValuePair<string, string>[1] { new KeyValuePair<string, string>("Grade","100")};
+            KeyValuePair<string, object>[] keyValue = new KeyValuePair<string, object>[1] { new KeyValuePair<string, object>("Grade", 100) };
             dataList = service.LoadPageList<Learn>(pageSize, pageIdx, ref count, keyValue);
             PrintObj(dataList);
             Console.WriteLine("-------------LoadPageList_KeyValuePair_End-------------\n");
@@ -241,7 +242,7 @@ namespace TestApp
 
         private static void PrintObj(object obj)
         {
-            
+
             Type type = obj.GetType();
             var collectionType = type.GetInterface("ICollection");
             if (collectionType != null)
@@ -262,7 +263,14 @@ namespace TestApp
                     if (p.PropertyType.Namespace == "System")
                     {
                         Console.Write(p.Name + ":");
-                        Console.Write(p.GetValue(obj).ToString().TrimEnd() + ",");
+                        if (null == p.GetValue(obj))
+                        {
+                            Console.Write("null");
+                        }
+                        else
+                        {
+                            Console.Write(p.GetValue(obj).ToString().TrimEnd() + ",");
+                        }
                     }
                 }
                 Console.Write("}");

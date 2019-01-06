@@ -100,7 +100,7 @@ namespace MyORM
             {
                 if (pro.IsDefined(typeof(MyForeignKeyAttribute), false))
                 {
-                    if (pro.PropertyType.Name == forType.Name)
+                    if (pro.PropertyType == forType)
                     {
                         var attr = (MyForeignKeyAttribute)pro.GetCustomAttribute(typeof(MyForeignKeyAttribute));
                         table = attr.TableName;
@@ -144,14 +144,14 @@ namespace MyORM
         {
             var t = this.GetType();
             var props = t.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-            List<string> primaryKVal = new List<string>();
+            List<object> primaryKVal = new List<object>();
             PropertyInfo refProp = null;
             SQLService service = GetSQLService();
             foreach (var p in props)
             {
                 if (p.IsDefined(typeof(MyPrimaryKeyAttribute)))
                 {
-                    primaryKVal.Add(p.GetValue(this).ToString());
+                    primaryKVal.Add(p.GetValue(this));
                 }
                 else if (p.IsDefined(typeof(MyMappingListAttribute)))
                 {
@@ -165,10 +165,10 @@ namespace MyORM
             var refAttr = (MyMappingListAttribute)refProp.GetCustomAttribute(typeof(MyMappingListAttribute));
             var primaryKeyName = refAttr.ForeignKeys;
 
-            KeyValuePair<string, string>[] conditions = new KeyValuePair<string, string>[primaryKVal.Count];
+            KeyValuePair<string, object>[] conditions = new KeyValuePair<string, object>[primaryKVal.Count];
             for (int i = 0; i < primaryKVal.Count; i++)
             {
-                conditions[i] = new KeyValuePair<string, string>(primaryKeyName[i], primaryKVal[i]);
+                conditions[i] = new KeyValuePair<string, object>(primaryKeyName[i], primaryKVal[i]);
             }
             if (service == null)
                 throw new Exception("使用数据库服务前未确定数据库类型");

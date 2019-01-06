@@ -41,45 +41,38 @@ namespace MyORM.DbService
                 }
             }
 
-            KeyValuePair<string, string>[] vals = new KeyValuePair<string, string>[baseProps.Count];
+            KeyValuePair<string, object>[] vals = new KeyValuePair<string, object>[baseProps.Count];
+            string[] propNms = new string[baseProps.Count];
             int i = 0;
             foreach (var p in baseProps)
             {
                 string key = p.Name;
-                string value = "";
+                object value = null;
                 if (p.IsDefined(typeof(MyPrimaryKeyAttribute)))
                 {
                     primaryKeyCnt++;
                 }
-
-                if (p.GetValue(model) == null)
-                    value = "null";
-                //AutoIncrement的Int类型未设定值的都默认为null
-                else if (p.IsDefined(typeof(MyAutoIncrementAttribute)) && Convert.ToInt64(p.GetValue(model)) == 0)
+                if (p.IsDefined(typeof(MyAutoIncrementAttribute)) && Convert.ToInt32(p.GetValue(model)) == 0)
                 {
                     continue;
                 }
-                else if (p.PropertyType == typeof(DateTime))
-                {
-                    value = ((DateTime)p.GetValue(model)).ToString("s");
-                }
-                else
-                    value = p.GetValue(model).ToString();
-                vals[i] = new KeyValuePair<string, string>(key, value);
+                value = p.GetValue(model);
+                vals[i] = new KeyValuePair<string, object>(key, value);
+                propNms[i] = key;
                 i++;
             }
-            string sql = stringBuilder.InsertString(GetTableName(t), vals);
-            int res = helper.DoUpdate(sql);
+            string sql = stringBuilder.InsertString(GetTableName(t), propNms);
+            int res = helper.DoUpdate(sql,vals);
 
             // UpdateModel
-            if(1 == primaryKeyCnt && 0 < res)
+            if (1 == primaryKeyCnt && 0 < res)
             {
                 primaryKey = FindAutoIncrementPrimaryKey(t);
                 if (null != primaryKey)
                 {
-                    sql = stringBuilder.SelectLastInsertRow(GetTableName(t),primaryKey.Name);
+                    sql = stringBuilder.SelectLastInsertRow(GetTableName(t), primaryKey.Name);
                     var table = helper.DoSelect(sql);
-                    initModel(table.Rows[0],t,model);
+                    initModel(table.Rows[0], t, model);
                 }
             }
 
@@ -106,16 +99,18 @@ namespace MyORM.DbService
                 }
             }
 
-            KeyValuePair<string, string>[] primary = new KeyValuePair<string, string>[primaryKeys.Count];
+            KeyValuePair<string, object>[] primary = new KeyValuePair<string, object>[primaryKeys.Count];
+            string[] propNms = new string[primaryKeys.Count];
             for (int i = 0; i < primaryKeys.Count; i++)
             {
                 string key = primaryKeys[i].Name;
-                var val = primaryKeys[i].GetValue(model).ToString();
-                primary[i] = new KeyValuePair<string, string>(key, val);
+                var val = primaryKeys[i].GetValue(model);
+                primary[i] = new KeyValuePair<string, object>(key, val);
+                propNms[i] = key;
             }
 
-            string sql = stringBuilder.DeleteString(GetTableName(t), primary);
-            int result = helper.DoUpdate(sql);
+            string sql = stringBuilder.DeleteString(GetTableName(t), propNms);
+            int result = helper.DoUpdate(sql, primary);
             helper.ShutDown();
             return result > 0;
         }
@@ -125,7 +120,7 @@ namespace MyORM.DbService
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public virtual List<T> LoadAll<T>() where T:ModelBase
+        public virtual List<T> LoadAll<T>() where T : ModelBase
         {
             OpenConnection();
             List<T> result = new List<T>();
@@ -142,11 +137,12 @@ namespace MyORM.DbService
         /// <typeparam name="T"></typeparam>
         /// <param name="conditions"></param>
         /// <returns></returns>
-        public virtual List<T> LoadByCondition<T>(KeyValuePair<string, string>[] conditions,Expression<Func<T,object>> orderBy=null,string orderType = "asc") where T:ModelBase
+        public virtual List<T> LoadByCondition<T>(KeyValuePair<string, object>[] conditions, Expression<Func<T, object>> orderBy = null, string orderType = "asc") where T : ModelBase
         {
             List<T> result = new List<T>();
             Type t = typeof(T);
             List<string> orders = new List<string>();
+
             if (orderBy != null)  //有传排序属性就按排序属性排序
             {
                 orders.Add(ExpressionHandle.DealGetPropertyNameExpression<T>(orderBy));
@@ -162,10 +158,14 @@ namespace MyORM.DbService
                     }
                 }
             }
+
+            // 获取作为条件的属性的属性名
+            string[] propNms = GetKeysArray(conditions);
+
             string[] order = orders.ToArray();
-            string sql = stringBuilder.SelectByCondition(GetTableName(t), conditions,order,orderType);
+            string sql = stringBuilder.SelectByCondition(GetTableName(t), propNms, order, orderType);
             OpenConnection();
-            var table = helper.DoSelect(sql);
+            var table = helper.DoSelect(sql,conditions);
             initObjectList<T>(result, table);
             helper.ShutDown();
             return result;
@@ -177,7 +177,7 @@ namespace MyORM.DbService
         /// <typeparam name="T"></typeparam>
         /// <param name="primaryKeys"></param>
         /// <returns></returns>
-        public virtual T LoadByID<T>(params object[] primaryKeys) where T:ModelBase
+        public virtual T LoadByID<T>(params object[] primaryKeys) where T : ModelBase
         {
             Type t = typeof(T);
             var props = t.GetProperties();
@@ -189,11 +189,11 @@ namespace MyORM.DbService
                     primarykeys.Add(p);
                 }
             }
-            KeyValuePair<string, string>[] conditions = new KeyValuePair<string, string>[primarykeys.Count];
+            KeyValuePair<string, object>[] conditions = new KeyValuePair<string, object>[primarykeys.Count];
             int i = 0;
             foreach (var p in primarykeys)
             {
-                conditions[i] = new KeyValuePair<string, string>(p.Name, primaryKeys[i].ToString());
+                conditions[i] = new KeyValuePair<string, object>(p.Name, primaryKeys[i]);
             }
 
             return LoadByID<T>(conditions);
@@ -205,12 +205,13 @@ namespace MyORM.DbService
         /// <typeparam name="T"></typeparam>
         /// <param name="express"></param>
         /// <returns></returns>
-        public virtual List<T> LoadMany<T>(Expression<Func<T, bool>> express) where T:ModelBase
+        public virtual List<T> LoadMany<T>(Expression<Func<T, bool>> express) where T : ModelBase
         {
             OpenConnection();
-            string sql = stringBuilder.SelectMany(express,GetTableName(typeof(T)));
+            string sql = "";
+            var conditions = stringBuilder.SelectMany(out sql,express, GetTableName(typeof(T)));
             List<T> result = new List<T>();
-            var table = helper.DoSelect(sql);
+            var table = helper.DoSelect(sql, conditions);
             initObjectList<T>(result, table);
             helper.ShutDown();
             return result;
@@ -228,9 +229,10 @@ namespace MyORM.DbService
         /// <param name="orderBy">排序</param>
         /// <param name="orderType">排序类型:asc,desc</param>
         /// <returns></returns>
-        public virtual List<T> LoadPageList<T>(int pageSize, int nowPage, ref int infoCount, Expression<Func<T, bool>> condition = null, Expression<Func<T, object>> orderBy = null, string orderType = "asc")where T:ModelBase
+        public virtual List<T> LoadPageList<T>(int pageSize, int nowPage, ref int infoCount, Expression<Func<T, bool>> condition = null, Expression<Func<T, object>> orderBy = null, string orderType = "asc") where T : ModelBase
         {
             var result = new List<T>();
+            DataTable table = null;
             OpenConnection();
             var tragetType = typeof(T);
             List<string> orders = new List<string>();
@@ -252,11 +254,17 @@ namespace MyORM.DbService
             }
             string[] order = orders.ToArray();
             string sql = "";// BuildPageSelectSql();
+
             if (condition == null)
-                sql = stringBuilder.SelectPageList(tragetType.Name, pageSize, nowPage, order, orderType);
+            {
+                sql = stringBuilder.SelectPageList(GetTableName(tragetType), pageSize, nowPage, order, orderType);
+                table = helper.DoSelect(sql);
+            }
             else
-                sql = stringBuilder.SelectPageListWithCondition(tragetType.Name, pageSize, nowPage, condition, order, orderType);
-            var table = helper.DoSelect(sql);
+            {
+                var conditions = stringBuilder.SelectPageListWithCondition(out sql,GetTableName(tragetType),pageSize,nowPage,condition, order, orderType);
+                table = helper.DoSelect(sql,conditions);
+            }
             initObjectList<T>(result, table);
             if (table.Rows.Count > 0)
             {
@@ -277,7 +285,7 @@ namespace MyORM.DbService
         /// <param name="orderBy">排序</param>
         /// <param name="orderType">排序类型:asc,desc</param>
         /// <returns></returns>
-        public virtual List<T> LoadPageList<T>(int pageSize, int nowPage, ref int infoCount, KeyValuePair<string, string>[] conditions = null, Expression<Func<T, object>> orderBy = null, string orderType = "asc") where T : ModelBase
+        public virtual List<T> LoadPageList<T>(int pageSize, int nowPage, ref int infoCount, KeyValuePair<string, object>[] conditions = null, Expression<Func<T, object>> orderBy = null, string orderType = "asc") where T : ModelBase
         {
             var result = new List<T>();
             OpenConnection();
@@ -301,11 +309,12 @@ namespace MyORM.DbService
             }
             string[] order = orders.ToArray();
             string sql = "";// BuildPageSelectSql();
+            string[] propNms = GetKeysArray(conditions);
             if (conditions == null)
                 sql = stringBuilder.SelectPageList(tragetType.Name, pageSize, nowPage, order, orderType);
             else
-                sql = stringBuilder.SelectPageListWithCondition(tragetType.Name, pageSize, nowPage, conditions, order, orderType);
-            var table = helper.DoSelect(sql);
+                sql = stringBuilder.SelectPageListWithCondition(tragetType.Name, pageSize, nowPage, propNms, order, orderType);
+            var table = helper.DoSelect(sql,conditions);
             initObjectList<T>(result, table);
             if (table.Rows.Count > 0)
             {
@@ -327,6 +336,9 @@ namespace MyORM.DbService
             var props = t.GetProperties();
             List<PropertyInfo> baseprop = new List<PropertyInfo>();
             List<PropertyInfo> primarykey = new List<PropertyInfo>();
+            string[] primaryProps = null;       // 主键属性名数组
+            string[] modifiedProp = null;       // 有改动的属性属性名数组
+            List<KeyValuePair<string, object>> paramList = new List<KeyValuePair<string, object>>();
             foreach (var p in props)
             {
                 if (p.IsDefined(typeof(MyPrimaryKeyAttribute)))
@@ -339,61 +351,66 @@ namespace MyORM.DbService
                     baseprop.Add(p);
                 }
             }
-            //  KeyValuePair<string, string>[] values = new KeyValuePair<string, string>[baseprop.Count];
             int i = 0;
-            KeyValuePair<string, string>[] primarykeys = new KeyValuePair<string, string>[primarykey.Count];
+            KeyValuePair<string, object>[] primarykeys = new KeyValuePair<string, object>[primarykey.Count];
             i = 0;
             foreach (var p in primarykey)
             {
                 string key = p.Name;
-                string value = p.GetValue(model).ToString();
-                primarykeys[i] = new KeyValuePair<string, string>(key, value);
+                object value = p.GetValue(model).ToString();
+                primarykeys[i] = new KeyValuePair<string, object>(key, value);
                 i++;
             }
-            //var oldModel = LoadByID<>(primarykeys);
-            string sql = stringBuilder.SelectOneRowByID(GetTableName(t), primarykeys);
-            DataTable table = helper.DoSelect(sql);
+            primaryProps = GetKeysArray(primarykeys);
+            string sql = stringBuilder.SelectOneRowByID(GetTableName(t), primaryProps);
+            DataTable table = helper.DoSelect(sql, primarykeys);
             var oldObj = Activator.CreateInstance(t);
             var oldModel = oldObj as ModelBase;
-            initModel(table.Rows[0], t,oldModel);
+            initModel(table.Rows[0], t, oldModel);
             var values = FindDifference(oldModel, model);
+            modifiedProp = GetKeysArray(values);
             if (values.Length == 0)     //No Changes
                 return true;
-            sql = stringBuilder.UpdateString(GetTableName(t), values, primarykeys);
-            int result = helper.DoUpdate(sql);
+            sql = stringBuilder.UpdateString(GetTableName(t), modifiedProp, primaryProps);
+            paramList.AddRange(values);
+            paramList.AddRange(primarykeys);
+            int result = helper.DoUpdate(sql, paramList.ToArray());
             helper.ShutDown();
             return result > 0;
         }
 
-        private KeyValuePair<string, string>[] FindDifference(ModelBase oldObj, ModelBase newObj)
+        private KeyValuePair<string, object>[] FindDifference(ModelBase oldObj, ModelBase newObj)
         {
-            List<KeyValuePair<string, string>> updateData = new List<KeyValuePair<string, string>>();
+            List<KeyValuePair<string, object>> updateData = new List<KeyValuePair<string, object>>();
             if (oldObj.GetType() == newObj.GetType())
             {
                 var type = oldObj.GetType();
                 var props = type.GetProperties();
                 foreach (var pro in props)
                 {
-                    string old = ""; 
-                    string newV = "";
-                    //DateTime类型的ToString可能会转出带中文星期几所以要严格制定转换格式
-                    if (pro.PropertyType == typeof(DateTime))
-                    {
-                        old = ((DateTime)pro.GetValue(oldObj)).ToString("yyyy/MM/dd HH:mm:ss");
-                        newV = ((DateTime)pro.GetValue(newObj)).ToString("yyyy/MM/dd HH:mm:ss");
-                    }
-                    else if (pro.PropertyType.Namespace != "System")    //外键等对象属性不需要比较
+                    if (pro.PropertyType.Namespace != "System")    //外键等对象属性不需要比较
                     {
                         continue;
                     }
+
+                    object oldVal = pro.GetValue(oldObj);
+                    object newVal = pro.GetValue(newObj);
+
+                    if (null == oldVal && null == newVal)
+                    {
+                        continue;
+                    }
+                    // always update
+                    if (pro.PropertyType.IsArray)
+                    {
+                        updateData.Add(new KeyValuePair<string, object>(pro.Name, newVal));
+                    }
                     else
                     {
-                        old = pro.GetValue(oldObj).ToString();
-                        newV = pro.GetValue(newObj).ToString();
-                    }
-                    if (old.CompareTo(newV) != 0)
-                    {
-                        updateData.Add(new KeyValuePair<string, string>(pro.Name, newV));
+                        if (!oldVal.Equals(newVal))
+                        {
+                            updateData.Add(new KeyValuePair<string, object>(pro.Name, newVal));
+                        }
                     }
                 }
                 return updateData.ToArray();
@@ -410,14 +427,16 @@ namespace MyORM.DbService
         /// <typeparam name="T"></typeparam>
         /// <param name="primaryKeys"></param>
         /// <returns></returns>
-        public virtual T LoadByID<T>(params KeyValuePair<string, string>[] primaryKeys) where T:ModelBase
+        public virtual T LoadByID<T>(params KeyValuePair<string, object>[] primaryKeys) where T:ModelBase
         {
             Type t = typeof(T);
-            string sql = stringBuilder.SelectOneRowByID(GetTableName(t), primaryKeys);
+            string[] propNms = GetKeysArray(primaryKeys);
+            string sql = stringBuilder.SelectOneRowByID(GetTableName(t), propNms);
             OpenConnection();
-            var table = helper.DoSelect(sql);
+            var table = helper.DoSelect(sql, primaryKeys);
             if (0 == table.Rows.Count)
             {
+                helper.ShutDown();
                 return null;
             }
             else
@@ -480,31 +499,34 @@ namespace MyORM.DbService
             }
             else
             {
-                var props = t.GetProperties();
-                foreach (var pro in props)
+                PropertyInfo property = null;
+                var cols = dr.Table.Columns;
+                string propNm = "";
+                foreach (DataColumn col in cols)
                 {
-                    //基础类型
-                    if (pro.PropertyType.Namespace == "System")
+                    propNm = col.ColumnName;
+                    property = t.GetProperty(propNm);
+                    if (null != property)
                     {
-                        var value = dr[pro.Name];
-                        if (value.GetType().Equals(typeof(Int64)))
+                        if (dr[col] is DBNull)
                         {
-                            value = Convert.ToInt32(value);
+                            property.SetValue(model, null);
+                            continue;
                         }
                         //Sqlite以string类型存储时间，C#不能默认转换
-                        if (pro.PropertyType == typeof(DateTime))
+                        if (col.DataType == typeof(DateTime))
                         {
-                            DateTime dt = Convert.ToDateTime(value);
-                            pro.SetValue(model, dt);
+                            DateTime dt = Convert.ToDateTime(dr[col]);
+                            property.SetValue(model, dt);
                             continue;
                         }
-                        if (value is System.DBNull)
+                        // sqlite中integer用INT64存储
+                        if (col.DataType == typeof(Int64) && property.PropertyType == typeof(Int32))
                         {
-                            if (pro.PropertyType == typeof(string))
-                                pro.SetValue(model, "");
+                            property.SetValue(model, Convert.ToInt32(dr[col]));
                             continue;
                         }
-                        pro.SetValue(model, value);
+                        property.SetValue(model, dr[col]);
                     }
                 }
             }
@@ -543,5 +565,43 @@ namespace MyORM.DbService
             }
             return ret;
         }
+
+        /// <summary>
+        /// 获取KeyValuePair中Key值组成的数组
+        /// </summary>
+        /// <param name="keyValues"></param>
+        /// <returns></returns>
+        private string[] GetKeysArray(KeyValuePair<string, object>[] keyValues)
+        {
+            string[] ret = new string[keyValues.Length];
+            for (int i = 0; i < keyValues.Length; i++)
+            {
+                ret[i] = keyValues[i].Key;
+            }
+            return ret;
+        }
+        /*private bool ByteArrCompare(Byte[] arr1,Byte[] arr2)
+        {
+            bool ret = true;
+            if (null == arr1 || null == arr2)
+            {
+                ret = false;
+            }
+            else if (arr1.Length == arr2.Length)
+            {
+                for (int i = 0; i < arr2.Length; i++)
+                {
+                    if (arr1[i] != arr2[i])
+                    {
+                        ret = false;
+                    }
+                }
+            }
+            else
+            {
+                ret = false;
+            }
+            return ret;
+        }*/
     }
 }

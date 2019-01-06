@@ -12,7 +12,7 @@ namespace MyORM.DbStringBuilder
     /// <summary>
     /// 生成对应的SQL语句（基于MYSQL，若扩展其他数据库需要重写某些方法）
     /// </summary>
-    abstract class SQLStringBuilder:ISQLStringBuilder
+    abstract class SQLStringBuilder : ISQLStringBuilder
     {
         /// <summary>
         /// 查询该表下所有数据
@@ -46,19 +46,12 @@ namespace MyORM.DbStringBuilder
         /// 以主键为条件查询某个表，只返回第一条数据
         /// </summary>
         /// <param name="TableName">表名</param>
-        /// <param name="primaryKeys">主键对应的名字和值</param>
+        /// <param name="primaryKeys">主键对应的属性名</param>
         /// <returns></returns>
-        public virtual string SelectOneRowByID(string TableName, params KeyValuePair<string, string>[] primaryKeys)
+        public virtual string SelectOneRowByID(string TableName, string[] primaryKeys)
         {
             StringBuilder sb = new StringBuilder();
-            string[] primaryKeyNames = new string[primaryKeys.Count()];
-            int i = 0;
-            foreach (var primaryKey in primaryKeys)
-            {
-                primaryKeyNames[i] = primaryKey.Key;
-                i++;
-            }
-            sb.Append(SelectByCondition(TableName, primaryKeys,primaryKeyNames));
+            sb.Append(SelectByCondition(TableName, primaryKeys, primaryKeys));
             sb.Append(" limit 1");
             return sb.ToString();
         }
@@ -67,36 +60,46 @@ namespace MyORM.DbStringBuilder
         /// 对表进行条件查询
         /// </summary>
         /// <param name="TableName">表明</param>
-        /// <param name="conditions">查询条件</param>
+        /// <param name="conditions">查询条件属性名</param>
         /// <returns></returns>
-        public virtual string SelectByCondition(string TableName, KeyValuePair<string, string>[] conditions, string[] orderBy = null, string orderType = "asc")
+        public virtual string SelectByCondition(string TableName, string[] conditions, string[] orderBy = null, string orderType = "asc")
         {
             StringBuilder sb = new StringBuilder();
+            bool first = true;
             sb.Append("select * from " + TableName + " where ");
-            foreach (var kv in conditions)
+            foreach (var item in conditions)
             {
-                if (kv.Value.ToLower() != "null")
-                    sb.Append(kv.Key + "='" + kv.Value + "' and ");
+                if (first)
+                {
+                    first = false;
+                }
                 else
                 {
-                    sb.Append(kv.Key + "=" + kv.Value + " and ");
+                    sb.Append(" and ");
                 }
+                sb.Append(item);
+                sb.Append("=@");
+                sb.Append(item);
+            }
+            if (!first)
+            {
+                sb.Append(" and ");
             }
             sb.Append("1=1 order by ");
-            bool flag = false;
+            first = true;
             foreach (string props in orderBy)
             {
-                if (flag)
+                if (!first)
                 {
                     sb.Append(",");
                 }
                 else
                 {
-                    flag = true;
+                    first = false;
                 }
                 sb.Append(props);
             }
-            sb.Append(" "+orderType);
+            sb.Append(" " + orderType);
             return sb.ToString();
         }
 
@@ -104,19 +107,29 @@ namespace MyORM.DbStringBuilder
         /// 更新某个表的某条数据 
         /// </summary>
         /// <param name="TableName">要更新的表</param>
-        /// <param name="values">对象的各种属性和值</param>
-        /// <param name="conditions">主键值</param>
+        /// <param name="modifiedProps">对象的各种属性和值</param>
+        /// <param name="primaryProps">主键值</param>
         /// <returns></returns>
-        public virtual string UpdateString(string TableName, KeyValuePair<string, string>[] values, params KeyValuePair<string, string>[] conditions)
+        public virtual string UpdateString(string TableName, string[] modifiedProps, string[] primaryProps)
         {
-            string whereString = BuildWhereString(conditions);
+            string whereString = BuildWhereString(primaryProps);
             StringBuilder sb = new StringBuilder();
+            bool first = true;
             sb.Append("update " + TableName + " set ");
-            foreach (var val in values)
+            foreach (var val in modifiedProps)
             {
-                sb.Append(val.Key + "='" + val.Value + "',");
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    sb.Append(",");
+                }
+                sb.Append(val);
+                sb.Append("=@");
+                sb.Append(val);
             }
-            sb = sb.Remove(sb.Length - 1, 1);
             sb.Append(whereString);
             return sb.ToString();
         }
@@ -126,57 +139,82 @@ namespace MyORM.DbStringBuilder
         /// </summary>
         /// <param name="conditions"></param>
         /// <returns></returns>
-        private static string BuildWhereString(params KeyValuePair<string, string>[] conditions)
+        private static string BuildWhereString(string[] conditions)
         {
             StringBuilder sb = new StringBuilder();
+            bool first = true;
             sb.Append(" where ");
-            foreach (var kv in conditions)
+            foreach (var item in conditions)
             {
-                if (kv.Value.ToLower() != "null")
-                    sb.Append(kv.Key + "='" + kv.Value + "' and ");
+                if (first)
+                {
+                    first = false;
+                }
                 else
                 {
-                    sb.Append(kv.Key + "=" + kv.Value + " and ");
+                    sb.Append(" and ");
                 }
+                sb.Append(item);
+                sb.Append("=@");
+                sb.Append(item);
+
+            }
+            if (!first)
+            {
+                sb.Append(" and ");
             }
             sb.Append("1=1");
             return sb.ToString();
         }
 
-        public virtual string InsertString(string TableName, KeyValuePair<string, string>[] values)
+        public virtual string InsertString(string TableName, string[] values)
         {
             StringBuilder sb = new StringBuilder();
+            bool first = true;
             sb.Append("insert into " + TableName + "(");
             foreach (var val in values)
             {
-                if (!string.IsNullOrEmpty(val.Key))
+                if (string.IsNullOrEmpty(val))
                 {
-                    sb.Append(val.Key);
-                    sb.Append(",");
+                    continue;
                 }
+                if (first)
+                {
+                    sb.Append(val);
+                    first = false;
+                }
+                else
+                {
+                    sb.Append(",");
+                    sb.Append(val);
+                }
+
             }
-            sb = sb.Remove(sb.Length - 1, 1);
-            sb.Append(") values('");
+            first = true;
+            sb.Append(") values(");
             foreach (var val in values)
             {
-                if (!string.IsNullOrEmpty(val.Value))
+                if (string.IsNullOrEmpty(val))
                 {
-                    if (val.Value.ToLower() == "null")
-                    {
-                        sb = sb.Remove(sb.Length - 1, 1);
-                        sb.Append("null,'");
-                        continue;
-                    }
-                    sb.Append(val.Value);
-                    sb.Append("','");
+                    continue;
                 }
+                if (first)
+                {
+                    sb.Append("@" + val);
+                    first = false;
+                }
+                else
+                {
+                    sb.Append(",");
+                    sb.Append("@" + val);
+                }
+
             }
-            sb = sb.Remove(sb.Length - 2, 2);
             sb.Append(")");
             return sb.ToString(); ;
         }
 
-        public virtual string DeleteString(string TableName, params KeyValuePair<string, string>[] conditions)
+        public virtual string DeleteString(string TableName, string[] conditions)
         {
             StringBuilder sb = new StringBuilder();
             sb.Append("delete from " + TableName);
@@ -185,26 +223,18 @@ namespace MyORM.DbStringBuilder
             return sb.ToString(); ;
         }
 
-        public virtual string SelectPageList(string Table, int pageSize, int nowPage, string[] orderBy = null,string orderType = "asc")
+        public virtual string SelectPageList(string Table, int pageSize, int nowPage, string[] orderBy = null, string orderType = "asc")
         {
-            return "select * from " + Table + ",(select count(*) as cnt from " + Table + ") as T " +OrderByString(orderType,orderBy)+ LimitString(pageSize, nowPage);
+            return "select * from " + Table + ",(select count(*) as cnt from " + Table + ") as T " + OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);
         }
 
-        public virtual string SelectPageListWithCondition(string Table, int pageSize, int nowPage,KeyValuePair<string, string>[] conditions, string[] orderBy = null, string orderType = "asc")
+        public virtual string SelectPageListWithCondition(string Table, int pageSize, int nowPage, string[] conditions, string[] orderBy = null, string orderType = "asc")
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("select * from " + Table + ",(select count(*) as cnt from " + Table + ") as T" + " where ");
-            foreach (var kv in conditions)
-            {
-                if (kv.Value.ToLower() != "null")
-                    sb.Append(kv.Key + "='" + kv.Value + "' and ");
-                else
-                {
-                    sb.Append(kv.Key + "=" + kv.Value + " and ");
-                }
-            }
-            sb.Append("1=1 ");
-            return sb.ToString()+OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);
+            sb.Append("select * from " + Table + ",(select count(*) as cnt from " + Table + ") as T");
+            sb.Append(BuildWhereString(conditions));
+            sb.Append(" ");
+            return sb.ToString() + OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);
         }
 
         private static string LimitString(int pageSize, int nowPage)
@@ -224,14 +254,15 @@ namespace MyORM.DbStringBuilder
         /// <typeparam name="T"></typeparam>
         /// <param name="express"></param>
         /// <returns></returns>
-        public virtual string SelectMany<T>(Expression<Func<T, bool>> express,string TableName)
+        public virtual KeyValuePair<string, object>[] SelectMany<T>(out string sql, Expression<Func<T, bool>> express, string TableName)
         {
-            //string TableName = typeof(T).Name;
-            
             var ex = express.Body;
-            string sql = SelectMany_Base(TableName);
-            sql += ExpressionHandle.DealExpression(ex);
-            return sql;
+            string sqlBase = SelectMany_Base(TableName);
+            string whereStr = "";
+            
+            var ret = ExpressionHandle.DealExpression(out whereStr, ex);
+            sql = sqlBase + whereStr;
+            return ret;
         }
 
         public virtual string OrderByString(string orderType, string[] property)
@@ -240,7 +271,7 @@ namespace MyORM.DbStringBuilder
             if (orderType.ToLower().CompareTo("asc") == 0 || orderType.ToLower().CompareTo("desc") == 0)
             {
                 bool flag = true;
-                if (property==null || property.Length == 0)
+                if (property == null || property.Length == 0)
                 {
                     return "";
                 }
@@ -253,29 +284,31 @@ namespace MyORM.DbStringBuilder
                     }
                     else
                     {
-                        sql += ","+val;
+                        sql += "," + val;
                     }
                 }
-                sql = sql + " "+orderType.ToLower();
+                sql = sql + " " + orderType.ToLower();
                 return sql;
             }
             else
-                throw new ArgumentException("排序类型:"+orderType+"不正确");
+                throw new ArgumentException("排序类型:" + orderType + "不正确");
         }
 
-        public virtual string SelectPageListWithCondition<T>(string Table, int pageSize, int nowPage, Expression<Func<T, bool>> condition, string[] orderBy = null, string orderType = "asc")
+        public virtual KeyValuePair<string, object>[] SelectPageListWithCondition<T>(out string sql, string Table, int pageSize, int nowPage, Expression<Func<T, bool>> condition, string[] orderBy = null, string orderType = "asc")
         {
             StringBuilder sb = new StringBuilder();
             string whereStr = "";
+            KeyValuePair<string, object>[] conditions = null;
             sb.Append("select * from " + Table + ",(select count(*) as cnt from " + Table + ") as T" + " where ");
-            if(condition != null)
+            if (condition != null)
             {
-                whereStr = ExpressionHandle.DealExpression(condition.Body);
+                conditions = ExpressionHandle.DealExpression(out whereStr, condition.Body);
                 sb.Append(whereStr);
                 sb.Append(" and ");
             }
             sb.Append("1=1 ");
-            return sb.ToString() + OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);
+            sql = sb.ToString() + OrderByString(orderType, orderBy) + LimitString(pageSize, nowPage);
+            return conditions;
         }
 
         /// <summary>
@@ -283,7 +316,7 @@ namespace MyORM.DbStringBuilder
         /// </summary>
         /// <param name="Table"></param>
         /// <returns></returns>
-        public virtual string SelectLastInsertRow(string Table,string primaryKey)
+        public virtual string SelectLastInsertRow(string Table, string primaryKey)
         {
             throw new NotImplementedException();
         }
