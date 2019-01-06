@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using MySql.Data.MySqlClient;
@@ -25,22 +25,12 @@ namespace MyORM.DbHelper
 
         public  DataTable DoSelect(string sql)
         {
-            //this.sql = sql;
-            if (cmd != null)
-                cmd.Dispose();
-            cmd = new MySqlCommand(sql,con);
-            MySqlDataAdapter adapter = new MySqlDataAdapter(cmd);
-            DataSet ds = new DataSet();
-            adapter.Fill(ds);
-            return ds.Tables[0];
+            return DoSelect(sql,null);
         }
 
         public  int DoUpdate(string sql)
         {
-            if (cmd != null)
-                cmd.Dispose();
-            cmd = new MySqlCommand(sql,con);
-            return cmd.ExecuteNonQuery();
+            return DoUpdate(sql,null);
         }
 
         public void ShutDown()
