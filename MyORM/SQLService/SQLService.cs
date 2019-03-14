@@ -407,7 +407,7 @@ namespace MyORM.DbService
                     }
                     else
                     {
-                        if (!oldVal.Equals(newVal))
+                        if (oldVal == null || !oldVal.Equals(newVal))
                         {
                             updateData.Add(new KeyValuePair<string, object>(pro.Name, newVal));
                         }
